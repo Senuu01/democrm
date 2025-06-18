@@ -138,8 +138,14 @@ class InvoiceController extends Controller
      */
     public function redirectToStripe(Invoice $invoice)
     {
+        // Check if Stripe keys are configured
+        $stripeSecret = config('services.stripe.secret');
+        if (empty($stripeSecret)) {
+            return redirect()->route('invoices.payment', $invoice)->with('error', 'Stripe is not configured. Please check your environment variables.');
+        }
+        
         // Set your Stripe secret key
-        Stripe::setApiKey(config('services.stripe.secret'));
+        Stripe::setApiKey($stripeSecret);
         
         try {
             $session = Session::create([
@@ -157,7 +163,7 @@ class InvoiceController extends Controller
                 ]],
                 'mode' => 'payment',
                 'success_url' => route('invoices.payment.success', $invoice) . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => route('invoices.show', $invoice),
+                'cancel_url' => route('invoices.payment', $invoice),
                 'metadata' => [
                     'invoice_id' => $invoice->id,
                     'invoice_number' => $invoice->invoice_number,
@@ -166,7 +172,8 @@ class InvoiceController extends Controller
             
             return redirect($session->url);
         } catch (\Exception $e) {
-            return redirect()->route('invoices.show', $invoice)->with('error', 'Payment setup failed: ' . $e->getMessage());
+            \Log::error('Stripe payment failed: ' . $e->getMessage());
+            return redirect()->route('invoices.payment', $invoice)->with('error', 'Payment setup failed: ' . $e->getMessage());
         }
     }
 
