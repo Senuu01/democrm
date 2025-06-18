@@ -8,6 +8,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomLoginController;
+use Laravel\Cashier\Http\Controllers\WebhookController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -42,7 +43,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Stripe webhook (no auth required)
-Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
+Route::post('/webhook/stripe', [WebhookController::class, 'handleWebhook'])
+    ->name('stripe.webhook');
 
 Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
 Route::post('/login', [CustomLoginController::class, 'login']);
