@@ -16,11 +16,6 @@
                         </button>
                     </form>
                 @endif
-                @if($invoice->status === 'sent')
-                    <a href="{{ route('invoices.payment', $invoice) }}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
-                        Pay Invoice
-                    </a>
-                @endif
             </div>
         </div>
     </x-slot>

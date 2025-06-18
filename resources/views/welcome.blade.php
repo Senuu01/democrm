@@ -104,7 +104,7 @@
                     <a href="{{ route('register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 animate-fadeIn" style="animation-delay: 0.6s;">Get Started</a>
                 </div>
             </div>
-        </nav>
+                </nav>
 
         <!-- Hero Section -->
         <div class="hero-section py-20 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between">

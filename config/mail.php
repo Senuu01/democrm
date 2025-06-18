@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -95,6 +95,15 @@ return [
                 'postmark',
             ],
             'retry_after' => 60,
+        ],
+
+        'mailtrap' => [
+            'transport' => 'smtp',
+            'host' => env('MAILTRAP_HOST', 'send.smtp.mailtrap.io'),
+            'port' => env('MAILTRAP_PORT', 587),
+            'username' => env('MAILTRAP_USERNAME'),
+            'password' => env('MAILTRAP_PASSWORD'),
+            'encryption' => env('MAILTRAP_ENCRYPTION', 'tls'),
         ],
 
     ],

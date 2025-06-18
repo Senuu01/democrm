@@ -62,7 +62,8 @@
                                                 @if($invoice->status === 'paid') bg-green-100 text-green-800
                                                 @elseif($invoice->status === 'overdue') bg-red-100 text-red-800
                                                 @elseif($invoice->status === 'sent') bg-blue-100 text-blue-800
-                                                @else bg-gray-100 text-gray-800
+                                                @elseif($invoice->status === 'cancelled') bg-gray-100 text-gray-800
+                                                @else bg-yellow-100 text-yellow-800
                                                 @endif">
                                                 {{ ucfirst($invoice->status) }}
                                             </span>
@@ -70,6 +71,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
                                                 <a href="{{ route('invoices.show', $invoice) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                                
                                                 @if($invoice->status === 'draft')
                                                     <a href="{{ route('invoices.edit', $invoice) }}" class="text-yellow-600 hover:text-yellow-900">Edit</a>
                                                     <form action="{{ route('invoices.destroy', $invoice) }}" method="POST" class="inline">
@@ -77,16 +79,55 @@
                                                         @method('DELETE')
                                                         <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this invoice?')">Delete</button>
                                                     </form>
-                                                @endif
-                                                @if($invoice->status === 'draft')
                                                     <form action="{{ route('invoices.send', $invoice) }}" method="POST" class="inline">
                                                         @csrf
                                                         <button type="submit" class="text-green-600 hover:text-green-900">Send</button>
                                                     </form>
                                                 @endif
-                                                @if($invoice->status === 'sent')
-                                                    <a href="{{ route('invoices.payment', $invoice) }}" class="text-green-600 hover:text-green-900">Pay</a>
-                                                @endif
+                                                
+                                                <!-- Status Change Dropdown -->
+                                                <div class="relative inline-block text-left" x-data="{ open: false }">
+                                                    <button @click="open = !open" class="text-purple-600 hover:text-purple-900">
+                                                        Status
+                                                        <svg class="w-4 h-4 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                                                        <div class="py-1">
+                                                            <form action="{{ route('invoices.status', $invoice) }}" method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <input type="hidden" name="status" value="draft">
+                                                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mark as Draft</button>
+                                                            </form>
+                                                            <form action="{{ route('invoices.status', $invoice) }}" method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <input type="hidden" name="status" value="sent">
+                                                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mark as Sent</button>
+                                                            </form>
+                                                            <form action="{{ route('invoices.status', $invoice) }}" method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <input type="hidden" name="status" value="paid">
+                                                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mark as Paid</button>
+                                                            </form>
+                                                            <form action="{{ route('invoices.status', $invoice) }}" method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <input type="hidden" name="status" value="overdue">
+                                                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mark as Overdue</button>
+                                                            </form>
+                                                            <form action="{{ route('invoices.status', $invoice) }}" method="POST">
+                                                                @csrf
+                                                                @method('PATCH')
+                                                                <input type="hidden" name="status" value="cancelled">
+                                                                <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mark as Cancelled</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>

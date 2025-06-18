@@ -13,7 +13,7 @@
                         @csrf
 
                         <div class="mb-4">
-                            <x-label for="customer_id" :value="__('Customer')" />
+                            <x-input-label for="customer_id" :value="__('Customer')" />
                             <select name="customer_id" id="customer_id" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
                                 <option value="">Select a customer</option>
                                 @foreach($customers as $customer)
@@ -22,48 +22,48 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <x-input-error for="customer_id" class="mt-2" />
+                            <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="mb-4">
-                                <x-label for="amount" :value="__('Amount')" />
-                                <x-input id="amount" type="number" step="0.01" name="amount" :value="old('amount')" class="block mt-1 w-full" required />
-                                <x-input-error for="amount" class="mt-2" />
+                                <x-input-label for="amount" :value="__('Amount')" />
+                                <x-text-input id="amount" type="number" step="0.01" name="amount" :value="old('amount')" class="block mt-1 w-full" required />
+                                <x-input-error :messages="$errors->get('amount')" class="mt-2" />
                             </div>
 
                             <div class="mb-4">
-                                <x-label for="tax_amount" :value="__('Tax Amount')" />
-                                <x-input id="tax_amount" type="number" step="0.01" name="tax_amount" :value="old('tax_amount')" class="block mt-1 w-full" required />
-                                <x-input-error for="tax_amount" class="mt-2" />
+                                <x-input-label for="tax_amount" :value="__('Tax Amount')" />
+                                <x-text-input id="tax_amount" type="number" step="0.01" name="tax_amount" :value="old('tax_amount')" class="block mt-1 w-full" required />
+                                <x-input-error :messages="$errors->get('tax_amount')" class="mt-2" />
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="mb-4">
-                                <x-label for="issue_date" :value="__('Issue Date')" />
-                                <x-input id="issue_date" type="date" name="issue_date" :value="old('issue_date', date('Y-m-d'))" class="block mt-1 w-full" required />
-                                <x-input-error for="issue_date" class="mt-2" />
+                                <x-input-label for="issue_date" :value="__('Issue Date')" />
+                                <x-text-input id="issue_date" type="date" name="issue_date" :value="old('issue_date', date('Y-m-d'))" class="block mt-1 w-full" required />
+                                <x-input-error :messages="$errors->get('issue_date')" class="mt-2" />
                             </div>
 
                             <div class="mb-4">
-                                <x-label for="due_date" :value="__('Due Date')" />
-                                <x-input id="due_date" type="date" name="due_date" :value="old('due_date', date('Y-m-d', strtotime('+30 days')))" class="block mt-1 w-full" required />
-                                <x-input-error for="due_date" class="mt-2" />
+                                <x-input-label for="due_date" :value="__('Due Date')" />
+                                <x-text-input id="due_date" type="date" name="due_date" :value="old('due_date', date('Y-m-d', strtotime('+30 days')))" class="block mt-1 w-full" required />
+                                <x-input-error :messages="$errors->get('due_date')" class="mt-2" />
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <x-label for="notes" :value="__('Notes')" />
+                            <x-input-label for="notes" :value="__('Notes')" />
                             <textarea name="notes" id="notes" rows="4" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">{{ old('notes') }}</textarea>
-                            <x-input-error for="notes" class="mt-2" />
+                            <x-input-error :messages="$errors->get('notes')" class="mt-2" />
                         </div>
 
                         <div class="flex items-center justify-end mt-4">
                             <a href="{{ route('invoices.index') }}" class="text-gray-600 hover:text-gray-900 mr-4">Cancel</a>
-                            <x-button>
+                            <x-primary-button>
                                 {{ __('Create Invoice') }}
-                            </x-button>
+                            </x-primary-button>
                         </div>
                     </form>
                 </div>

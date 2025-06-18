@@ -24,9 +24,12 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'due_date' => 'datetime',
+        'issue_date' => 'date',
+        'due_date' => 'date',
         'paid_at' => 'datetime',
-        'amount' => 'decimal:2'
+        'amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo

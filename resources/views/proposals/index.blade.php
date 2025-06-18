@@ -18,22 +18,21 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <!-- Filters -->
-                    <div class="mb-6 flex flex-wrap gap-4">
-                        <div class="flex-1 min-w-[200px]">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
-                            <input type="text" name="search" id="search" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Search proposals...">
-                        </div>
+                    <form method="GET" action="{{ route('proposals.index') }}" class="mb-6 flex flex-wrap gap-4">
                         <div class="w-[200px]">
                             <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                            <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <select id="status" name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" onchange="this.form.submit()">
                                 <option value="">All Statuses</option>
-                                <option value="draft">Draft</option>
-                                <option value="sent">Sent</option>
-                                <option value="accepted">Accepted</option>
-                                <option value="declined">Declined</option>
+                                <option value="draft" @if(request('status')=='draft') selected @endif>Draft</option>
+                                <option value="sent" @if(request('status')=='sent') selected @endif>Sent</option>
+                                <option value="accepted" @if(request('status')=='accepted') selected @endif>Accepted</option>
+                                <option value="declined" @if(request('status')=='declined') selected @endif>Declined</option>
                             </select>
                         </div>
-                    </div>
+                        <div class="flex items-end">
+                            <button type="submit" class="ml-2 px-4 py-2 bg-indigo-600 text-white rounded font-semibold text-sm hover:bg-indigo-700">Filter</button>
+                        </div>
+                    </form>
 
                     <!-- Proposals Table -->
                     <div class="overflow-x-auto">
@@ -41,7 +40,8 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal #</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -54,8 +54,11 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                             #{{ $proposal->id }}
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            {{ $proposal->title }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $proposal->client_name }}
+                                            {{ $proposal->customer->name ?? '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             ${{ number_format($proposal->amount, 2) }}
@@ -108,15 +111,5 @@
     </div>
 
     @push('scripts')
-    <script>
-        // Add any JavaScript for filtering/searching here
-        document.getElementById('search').addEventListener('input', function(e) {
-            // Implement search functionality
-        });
-
-        document.getElementById('status').addEventListener('change', function(e) {
-            // Implement status filter functionality
-        });
-    </script>
     @endpush
 </x-app-layout> 

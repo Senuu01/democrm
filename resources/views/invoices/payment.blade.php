@@ -1,126 +1,117 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Pay Invoice') }}
-        </h2>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Pay Invoice') }}
+            </h2>
+            <a href="{{ route('invoices.show', $invoice) }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                Back to Invoice
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Invoice Summary -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Summary</h3>
-                            <div class="bg-gray-50 rounded-lg p-6">
-                                <div class="space-y-4">
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-500">Invoice Number</span>
-                                        <p class="mt-1">{{ $invoice->invoice_number }}</p>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-500">Customer</span>
-                                        <p class="mt-1">{{ $invoice->customer->name }}</p>
-                                    </div>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-500">Due Date</span>
-                                        <p class="mt-1">{{ $invoice->due_date->format('F j, Y') }}</p>
-                                    </div>
-                                    <div class="border-t border-gray-200 pt-4 mt-4">
-                                        <span class="text-sm font-medium text-gray-500">Total Amount</span>
-                                        <p class="mt-1 text-2xl font-bold text-indigo-600">${{ number_format($invoice->total_amount, 2) }}</p>
-                                    </div>
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Payment for Invoice #{{ $invoice->invoice_number }}</h3>
+                        <p class="text-gray-600">Please review the details below and click "Pay Now" to proceed with payment.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <!-- Invoice Details -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Invoice Details</h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Invoice Number:</span>
+                                    <span class="font-medium">{{ $invoice->invoice_number }}</span>
                                 </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Issue Date:</span>
+                                    <span class="font-medium">{{ $invoice->issue_date->format('F j, Y') }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Due Date:</span>
+                                    <span class="font-medium">{{ $invoice->due_date->format('F j, Y') }}</span>
+                                </div>
+                                @if($invoice->notes)
+                                    <div class="border-t pt-3">
+                                        <span class="text-gray-600">Notes:</span>
+                                        <p class="text-sm text-gray-700 mt-1">{{ $invoice->notes }}</p>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 
-                        <!-- Payment Form -->
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Details</h3>
-                            <form id="payment-form" class="space-y-6">
+                        <!-- Customer Information -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Customer Information</h4>
+                            <div class="space-y-3">
                                 <div>
-                                    <label for="card-element" class="block text-sm font-medium text-gray-700">
-                                        Credit or debit card
-                                    </label>
-                                    <div class="mt-1">
-                                        <div id="card-element" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                            <!-- Stripe Card Element will be inserted here -->
-                                        </div>
-                                    </div>
-                                    <div id="card-errors" class="mt-2 text-sm text-red-600" role="alert"></div>
+                                    <span class="text-gray-600">Name:</span>
+                                    <p class="font-medium">{{ $invoice->customer->name }}</p>
                                 </div>
+                                <div>
+                                    <span class="text-gray-600">Company:</span>
+                                    <p class="font-medium">{{ $invoice->customer->company_name }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Email:</span>
+                                    <p class="font-medium">{{ $invoice->customer->email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div class="flex items-center justify-end">
-                                    <button type="submit" id="submit-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                                        Pay ${{ number_format($invoice->total_amount, 2) }}
-                                    </button>
+                    <!-- Payment Summary -->
+                    <div class="bg-indigo-50 rounded-lg p-6 mb-8">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Summary</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Subtotal:</span>
+                                <span class="font-medium">${{ number_format($invoice->amount, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Tax:</span>
+                                <span class="font-medium">${{ number_format($invoice->tax_amount, 2) }}</span>
+                            </div>
+                            <div class="border-t pt-3">
+                                <div class="flex justify-between">
+                                    <span class="text-lg font-semibold text-gray-900">Total Amount:</span>
+                                    <span class="text-2xl font-bold text-indigo-600">${{ number_format($invoice->total_amount, 2) }}</span>
                                 </div>
-                            </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Button -->
+                    <div class="text-center">
+                        <a href="{{ route('invoices.pay', $invoice) }}" 
+                           class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-lg inline-flex items-center">
+                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                            </svg>
+                            Pay Now - ${{ number_format($invoice->total_amount, 2) }}
+                        </a>
+                        <p class="text-sm text-gray-500 mt-3">You will be redirected to Stripe for secure payment processing.</p>
+                    </div>
+
+                    <!-- Security Notice -->
+                    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex">
+                            <svg class="w-5 h-5 text-blue-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div>
+                                <h5 class="font-medium text-blue-900">Secure Payment</h5>
+                                <p class="text-sm text-blue-700">Your payment information is encrypted and secure. We use Stripe for payment processing and never store your credit card details.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    @push('scripts')
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        // Initialize Stripe
-        const stripe = Stripe('{{ config('services.stripe.key') }}');
-        const elements = stripe.elements();
-
-        // Create card element
-        const card = elements.create('card');
-        card.mount('#card-element');
-
-        // Handle form submission
-        const form = document.getElementById('payment-form');
-        const submitButton = document.getElementById('submit-button');
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            submitButton.disabled = true;
-            submitButton.textContent = 'Processing...';
-
-            try {
-                const { paymentIntent, error } = await stripe.confirmCardPayment('{{ $clientSecret }}', {
-                    payment_method: {
-                        card: card,
-                        billing_details: {
-                            name: '{{ $invoice->customer->name }}',
-                            email: '{{ $invoice->customer->email }}',
-                        },
-                    },
-                });
-
-                if (error) {
-                    const errorElement = document.getElementById('card-errors');
-                    errorElement.textContent = error.message;
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Pay ${{ number_format($invoice->total_amount, 2) }}';
-                } else {
-                    // Payment successful
-                    window.location.href = '{{ route('invoices.show', $invoice) }}';
-                }
-            } catch (error) {
-                const errorElement = document.getElementById('card-errors');
-                errorElement.textContent = 'An unexpected error occurred.';
-                submitButton.disabled = false;
-                submitButton.textContent = 'Pay ${{ number_format($invoice->total_amount, 2) }}';
-            }
-        });
-
-        // Handle card element errors
-        card.addEventListener('change', ({error}) => {
-            const displayError = document.getElementById('card-errors');
-            if (error) {
-                displayError.textContent = error.message;
-            } else {
-                displayError.textContent = '';
-            }
-        });
-    </script>
-    @endpush
 </x-app-layout> 

@@ -115,7 +115,7 @@ class ProposalController extends Controller
     public function updateStatus(Request $request, Proposal $proposal)
     {
         $validated = $request->validate([
-            'status' => 'required|in:draft,sent,accepted,rejected',
+            'status' => 'required|in:draft,sent,accepted,declined',
         ]);
 
         $proposal->update($validated);
