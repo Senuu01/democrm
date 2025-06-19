@@ -123,4 +123,25 @@ class ProposalController extends Controller
         return redirect()->route('proposals.index')
             ->with('success', 'Proposal status updated successfully.');
     }
+
+    /**
+     * Send proposal email to customer
+     */
+    public function sendEmail(Proposal $proposal)
+    {
+        try {
+            Mail::to($proposal->customer->email)->send(new ProposalCreated($proposal));
+            
+            // Update status to 'sent' if it was 'draft'
+            if ($proposal->status === 'draft') {
+                $proposal->update(['status' => 'sent']);
+            }
+
+            return redirect()->back()
+                ->with('success', 'Proposal email sent successfully to ' . $proposal->customer->email);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to send proposal email: ' . $e->getMessage());
+        }
+    }
 }
