@@ -32,7 +32,7 @@
                                 <div>
                                     <span class="text-sm font-medium text-gray-500">Status</span>
                                     <p class="mt-1">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             @if($transaction->status === 'completed') bg-green-100 text-green-800
                                             @elseif($transaction->status === 'failed') bg-red-100 text-red-800
                                             @elseif($transaction->status === 'refunded') bg-yellow-100 text-yellow-800
@@ -104,7 +104,7 @@
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Status</span>
                                         <p class="mt-1">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                                 @if($transaction->invoice->status === 'paid') bg-green-100 text-green-800
                                                 @elseif($transaction->invoice->status === 'overdue') bg-red-100 text-red-800
                                                 @elseif($transaction->invoice->status === 'sent') bg-blue-100 text-blue-800
@@ -131,4 +131,4 @@
             </div>
         </div>
     </div>
-</x-app-layout> 
+</x-app-layout>
