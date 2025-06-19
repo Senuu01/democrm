@@ -109,6 +109,7 @@
                             Pay Now - ${{ number_format($invoice->total_amount, 2) }}
                         </a>
                         <p class="text-sm text-gray-500 mt-3">You will be redirected to Stripe for secure payment processing.</p>
+                        <p class="text-xs text-green-600 mt-2">✓ Payment status will update automatically after completion</p>
                     </div>
 
                     <!-- Security Notice -->
