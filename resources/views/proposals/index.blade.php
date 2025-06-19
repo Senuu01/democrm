@@ -80,6 +80,12 @@
                                             <div class="flex space-x-3">
                                                 <a href="{{ route('proposals.show', $proposal) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                                                 <a href="{{ route('proposals.edit', $proposal) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                                
+                                                <form action="{{ route('proposals.sendEmail', $proposal) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="text-green-600 hover:text-green-900" onclick="return confirm('Send proposal email to {{ $proposal->customer->email }}?')">Send Email</button>
+                                                </form>
+                                                
                                                 <form action="{{ route('proposals.destroy', $proposal) }}" method="POST" class="inline">
                                                     @csrf
                                                     @method('DELETE')
