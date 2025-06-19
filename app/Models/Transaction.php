@@ -19,6 +19,8 @@ class Transaction extends Model
         'payment_method',
         'status',
         'stripe_payment_intent_id',
+        'stripe_session_id',
+        'refund_id',
         'notes',
     ];
 
