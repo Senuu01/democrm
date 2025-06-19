@@ -78,6 +78,8 @@
             
             <p>Please review this proposal and let us know if you have any questions or if you would like to proceed with the agreement.</p>
             
+            <p>You can reply to this email or contact us directly to discuss this proposal further.</p>
+            
             <p>Best regards,<br>
             The CRM Team</p>
         </div>
