@@ -5,6 +5,15 @@
                 {{ __('Proposal Details') }}
             </h2>
             <div class="flex space-x-4">
+                <form method="POST" action="{{ route('proposals.sendEmail', $proposal) }}" class="inline">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700" onclick="return confirm('Send proposal email to {{ $proposal->customer->email }}?')">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 7.89a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        Send Email
+                    </button>
+                </form>
                 <a href="{{ route('proposals.edit', $proposal) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
                     Edit Proposal
                 </a>
