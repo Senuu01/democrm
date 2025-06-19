@@ -70,19 +70,24 @@ class TransactionController extends Controller
     public function updateStatus(Request $request, Transaction $transaction)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,completed,failed,refunded',
+            'status' => 'required|in:pending,completed,failed,refunded,expired,cancelled',
         ]);
 
         $transaction->update($validated);
 
         // If transaction is completed, update invoice status
         if ($validated['status'] === 'completed' && $transaction->invoice) {
-            $transaction->invoice->update(['status' => 'paid']);
+            $transaction->invoice->update(['status' => 'paid', 'paid_at' => now()]);
         }
 
         // If transaction is refunded, update invoice status
         if ($validated['status'] === 'refunded' && $transaction->invoice) {
             $transaction->invoice->update(['status' => 'refunded']);
+        }
+
+        // If transaction failed or expired, keep invoice as sent for retry
+        if (in_array($validated['status'], ['failed', 'expired']) && $transaction->invoice) {
+            $transaction->invoice->update(['status' => 'sent']);
         }
 
         return redirect()->route('transactions.index')
@@ -119,6 +124,293 @@ class TransactionController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('transactions.index')
                 ->with('error', 'Failed to process refund: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync transaction status with Stripe
+     */
+    public function syncWithStripe(Transaction $transaction)
+    {
+        try {
+            \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+            
+            $stripeStatus = null;
+            $statusMessage = '';
+            
+            // Check Stripe session if available
+            if ($transaction->stripe_session_id) {
+                $session = \Stripe\Checkout\Session::retrieve($transaction->stripe_session_id);
+                $stripeStatus = $this->mapStripeSessionStatus($session);
+                $statusMessage = $this->getStripeStatusMessage($session);
+                
+                // Update transaction based on Stripe session status
+                $this->updateTransactionFromStripeSession($transaction, $session);
+            }
+            // Check Stripe payment intent if available
+            elseif ($transaction->stripe_payment_intent_id) {
+                $paymentIntent = \Stripe\PaymentIntent::retrieve($transaction->stripe_payment_intent_id);
+                $stripeStatus = $this->mapStripePaymentIntentStatus($paymentIntent);
+                $statusMessage = $this->getStripePaymentIntentMessage($paymentIntent);
+                
+                // Update transaction based on payment intent status
+                $this->updateTransactionFromPaymentIntent($transaction, $paymentIntent);
+            }
+
+            return redirect()->back()
+                ->with('success', 'Transaction status synced with Stripe: ' . $statusMessage);
+                
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to sync with Stripe: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Sync all pending transactions with Stripe
+     */
+    public function syncAllPending()
+    {
+        try {
+            $pendingTransactions = Transaction::where('status', 'pending')
+                ->whereNotNull('stripe_session_id')
+                ->orWhere(function($query) {
+                    $query->where('status', 'pending')->whereNotNull('stripe_payment_intent_id');
+                })
+                ->get();
+
+            $syncedCount = 0;
+            $errorCount = 0;
+
+            foreach ($pendingTransactions as $transaction) {
+                try {
+                    $this->performStripeSync($transaction);
+                    $syncedCount++;
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    \Log::error('Failed to sync transaction ' . $transaction->id . ': ' . $e->getMessage());
+                }
+            }
+
+            $message = "Synced {$syncedCount} transactions successfully.";
+            if ($errorCount > 0) {
+                $message .= " {$errorCount} failed to sync.";
+            }
+
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to sync transactions: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Perform actual Stripe sync for a transaction
+     */
+    private function performStripeSync(Transaction $transaction)
+    {
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+        
+        if ($transaction->stripe_session_id) {
+            $session = \Stripe\Checkout\Session::retrieve($transaction->stripe_session_id);
+            $this->updateTransactionFromStripeSession($transaction, $session);
+        } elseif ($transaction->stripe_payment_intent_id) {
+            $paymentIntent = \Stripe\PaymentIntent::retrieve($transaction->stripe_payment_intent_id);
+            $this->updateTransactionFromPaymentIntent($transaction, $paymentIntent);
+        }
+    }
+
+    /**
+     * Update transaction from Stripe session
+     */
+    private function updateTransactionFromStripeSession(Transaction $transaction, $session)
+    {
+        $newStatus = $this->mapStripeSessionStatus($session);
+        
+        if ($transaction->status !== $newStatus) {
+            $transaction->update(['status' => $newStatus]);
+            
+            // Update invoice status accordingly
+            if ($transaction->invoice) {
+                $invoiceStatus = $this->getInvoiceStatusFromTransactionStatus($newStatus);
+                $updateData = ['status' => $invoiceStatus];
+                
+                if ($invoiceStatus === 'paid') {
+                    $updateData['paid_at'] = now();
+                }
+                
+                $transaction->invoice->update($updateData);
+            }
+        }
+    }
+
+    /**
+     * Update transaction from Stripe payment intent
+     */
+    private function updateTransactionFromPaymentIntent(Transaction $transaction, $paymentIntent)
+    {
+        $newStatus = $this->mapStripePaymentIntentStatus($paymentIntent);
+        
+        if ($transaction->status !== $newStatus) {
+            $transaction->update(['status' => $newStatus]);
+            
+            // Update invoice status accordingly
+            if ($transaction->invoice) {
+                $invoiceStatus = $this->getInvoiceStatusFromTransactionStatus($newStatus);
+                $updateData = ['status' => $invoiceStatus];
+                
+                if ($invoiceStatus === 'paid') {
+                    $updateData['paid_at'] = now();
+                }
+                
+                $transaction->invoice->update($updateData);
+            }
+        }
+    }
+
+    /**
+     * Map Stripe session status to transaction status
+     */
+    private function mapStripeSessionStatus($session)
+    {
+        switch ($session->status) {
+            case 'complete':
+                return $session->payment_status === 'paid' ? 'completed' : 'failed';
+            case 'expired':
+                return 'expired';
+            case 'open':
+                return 'pending';
+            default:
+                return 'pending';
+        }
+    }
+
+    /**
+     * Map Stripe payment intent status to transaction status
+     */
+    private function mapStripePaymentIntentStatus($paymentIntent)
+    {
+        switch ($paymentIntent->status) {
+            case 'succeeded':
+                return 'completed';
+            case 'payment_failed':
+            case 'canceled':
+                return 'failed';
+            case 'processing':
+            case 'requires_payment_method':
+            case 'requires_confirmation':
+            case 'requires_action':
+                return 'pending';
+            default:
+                return 'pending';
+        }
+    }
+
+    /**
+     * Get human-readable status message from Stripe session
+     */
+    private function getStripeStatusMessage($session)
+    {
+        if ($session->status === 'complete') {
+            return $session->payment_status === 'paid' ? 
+                'Payment completed successfully' : 
+                'Payment incomplete - ' . ucfirst($session->payment_status);
+        }
+        
+        return 'Session status: ' . ucfirst($session->status);
+    }
+
+    /**
+     * Get human-readable status message from Stripe payment intent
+     */
+    private function getStripePaymentIntentMessage($paymentIntent)
+    {
+        switch ($paymentIntent->status) {
+            case 'succeeded':
+                return 'Payment succeeded';
+            case 'payment_failed':
+                return 'Payment failed';
+            case 'canceled':
+                return 'Payment was canceled';
+            case 'processing':
+                return 'Payment is being processed';
+            case 'requires_payment_method':
+                return 'Requires payment method';
+            case 'requires_confirmation':
+                return 'Requires confirmation';
+            case 'requires_action':
+                return 'Requires additional action';
+            default:
+                return 'Status: ' . ucfirst($paymentIntent->status);
+        }
+    }
+
+    /**
+     * Get invoice status based on transaction status
+     */
+    private function getInvoiceStatusFromTransactionStatus($transactionStatus)
+    {
+        switch ($transactionStatus) {
+            case 'completed':
+                return 'paid';
+            case 'refunded':
+                return 'refunded';
+            case 'failed':
+            case 'expired':
+            case 'cancelled':
+                return 'sent'; // Keep as sent so it can be retried
+            default:
+                return 'sent';
+        }
+    }
+
+    /**
+     * Get real-time status update via AJAX
+     */
+    public function getStatus(Transaction $transaction)
+    {
+        try {
+            // Perform sync with Stripe
+            $this->performStripeSync($transaction);
+            
+            // Reload transaction to get updated status
+            $transaction->refresh();
+            
+            return response()->json([
+                'success' => true,
+                'status' => $transaction->status,
+                'status_display' => $this->getStatusDisplay($transaction->status),
+                'updated_at' => $transaction->updated_at->format('M d, Y H:i:s'),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get formatted status display
+     */
+    private function getStatusDisplay($status)
+    {
+        switch ($status) {
+            case 'completed':
+                return '✓ Payment Successful';
+            case 'failed':
+                return '✗ Payment Failed';
+            case 'expired':
+                return '⏰ Payment Expired';
+            case 'refunded':
+                return '↩ Refunded';
+            case 'pending':
+                return '⏳ Pending';
+            case 'cancelled':
+                return '❌ Payment Cancelled';
+            default:
+                return ucfirst($status);
         }
     }
 }
