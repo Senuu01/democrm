@@ -1,8 +1,27 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Transactions') }}
-        </h2>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Transactions') }}
+            </h2>
+            <div class="flex space-x-4">
+                <form action="{{ route('transactions.syncAllPending') }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Sync All Pending
+                    </button>
+                </form>
+                <button onclick="window.location.reload()" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-12">
@@ -60,14 +79,36 @@
                                             {{ ucfirst($transaction->payment_method) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                @if($transaction->status === 'completed') bg-green-100 text-green-800
-                                                @elseif($transaction->status === 'failed') bg-red-100 text-red-800
-                                                @elseif($transaction->status === 'refunded') bg-yellow-100 text-yellow-800
-                                                @else bg-gray-100 text-gray-800
-                                                @endif">
-                                                {{ ucfirst($transaction->status) }}
-                                            </span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    @if($transaction->status === 'completed') bg-green-100 text-green-800
+                                                    @elseif($transaction->status === 'failed') bg-red-100 text-red-800
+                                                    @elseif($transaction->status === 'expired') bg-orange-100 text-orange-800
+                                                    @elseif($transaction->status === 'refunded') bg-yellow-100 text-yellow-800
+                                                    @elseif($transaction->status === 'pending') bg-blue-100 text-blue-800
+                                                    @elseif($transaction->status === 'cancelled') bg-gray-100 text-gray-800
+                                                    @else bg-gray-100 text-gray-800
+                                                    @endif">
+                                                    @if($transaction->status === 'completed')
+                                                        ✓ Payment Successful
+                                                    @elseif($transaction->status === 'failed')
+                                                        ✗ Payment Failed
+                                                    @elseif($transaction->status === 'expired')
+                                                        ⏰ Payment Expired
+                                                    @elseif($transaction->status === 'refunded')
+                                                        ↩ Refunded
+                                                    @elseif($transaction->status === 'pending')
+                                                        ⏳ Pending
+                                                    @elseif($transaction->status === 'cancelled')
+                                                        ❌ Payment Cancelled
+                                                    @else
+                                                        {{ ucfirst($transaction->status) }}
+                                                    @endif
+                                                </span>
+                                                @if($transaction->stripe_session_id || $transaction->stripe_payment_intent_id)
+                                                    <span class="text-xs text-gray-400" title="Connected to Stripe">🔗</span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {{ $transaction->created_at->format('M d, Y H:i:s') }}
@@ -75,6 +116,14 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
                                                 <a href="{{ route('transactions.show', $transaction) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                                
+                                                @if(in_array($transaction->status, ['pending', 'failed']) && ($transaction->stripe_session_id || $transaction->stripe_payment_intent_id))
+                                                    <form action="{{ route('transactions.sync', $transaction) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="text-blue-600 hover:text-blue-900" title="Sync with Stripe">Sync</button>
+                                                    </form>
+                                                @endif
+                                                
                                                 @if($transaction->status === 'completed')
                                                     <form action="{{ route('transactions.refund', $transaction) }}" method="POST" class="inline">
                                                         @csrf
