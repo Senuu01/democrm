@@ -98,6 +98,7 @@ Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController
 Route::get('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'login'])->name('auth.email-login.post');
 
+Route::get('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'showRegister'])->name('auth.email-register');
 Route::get('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'register'])->name('auth.email-register.post');
 
