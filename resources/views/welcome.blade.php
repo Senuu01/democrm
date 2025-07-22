@@ -101,7 +101,7 @@
                 <a href="/" class="text-3xl font-extrabold text-indigo-600 animate-fadeIn mr-auto" style="animation-delay: 0.2s;">Connectly</a>
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 animate-fadeIn" style="animation-delay: 0.4s;">Login</a>
-                    <a href="{{ route('register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 animate-fadeIn" style="animation-delay: 0.6s;">Get Started</a>
+                    <a href="{{ route('auth.email-register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 animate-fadeIn" style="animation-delay: 0.6s;">Get Started</a>
                 </div>
             </div>
                 </nav>
@@ -116,7 +116,7 @@
                     Streamline your business operations with our modern CRM solution. Manage customers, track proposals, and grow your business efficiently.
                 </p>
                 <div class="mt-8 space-x-4 animate-slideUp" style="animation-delay: 1.2s;">
-                    <a href="{{ route('register') }}" class="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition duration-300 shadow-lg">Get Started</a>
+                    <a href="{{ route('auth.email-register') }}" class="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition duration-300 shadow-lg">Get Started</a>
                     <a href="#features" class="bg-blue-100 text-indigo-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-200 transition duration-300">Learn More</a>
                 </div>
             </div>

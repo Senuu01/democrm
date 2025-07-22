@@ -98,8 +98,8 @@ Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController
 Route::get('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'login'])->name('auth.email-login.post');
 
+// Register route - using auth.email-register as primary (most used in views)
 Route::get('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'showRegister'])->name('auth.email-register');
-Route::get('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'register'])->name('auth.email-register.post');
 
 Route::get('/verify-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'showEmailVerification'])->name('auth.verify-email-form');

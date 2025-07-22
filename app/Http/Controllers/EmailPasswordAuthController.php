@@ -96,7 +96,7 @@ class EmailPasswordAuthController extends Controller
     public function showEmailVerification()
     {
         if (!session('email')) {
-            return redirect()->route('register');
+            return redirect()->route('auth.email-register');
         }
         return view('auth.verify-email');
     }
