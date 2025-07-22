@@ -9,7 +9,7 @@ cmds = [
 ]
 
 [phases.start]
-cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
 
 [variables]
 PHP_VERSION = "8.2"
