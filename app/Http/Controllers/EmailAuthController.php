@@ -23,7 +23,10 @@ class EmailAuthController extends Controller
 
     public function sendLoginCode(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        // Manual validation to avoid database calls
+        if (empty($request->email) || !filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            return back()->withErrors(['email' => 'Valid email is required']);
+        }
         
         try {
             // Check if user exists in Supabase
@@ -74,7 +77,10 @@ class EmailAuthController extends Controller
 
     public function verifyCode(Request $request)
     {
-        $request->validate(['code' => 'required|digits:6']);
+        // Manual validation to avoid database calls
+        if (empty($request->code) || !preg_match('/^\d{6}$/', $request->code)) {
+            return back()->withErrors(['code' => 'Valid 6-digit code is required']);
+        }
         
         $email = Session::get('login_email');
         if (!$email) {
@@ -127,11 +133,13 @@ class EmailAuthController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'company' => 'nullable|string|max:255'
-        ]);
+        // Manual validation to avoid database calls
+        if (empty($request->name)) {
+            return back()->withErrors(['name' => 'Name is required']);
+        }
+        if (empty($request->email) || !filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            return back()->withErrors(['email' => 'Valid email is required']);
+        }
 
         try {
             // Check if user already exists
