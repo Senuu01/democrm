@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
-use Resend;
+use Illuminate\Support\Facades\Mail;
 
 class SimpleAuthController extends Controller
 {
@@ -46,19 +46,16 @@ class SimpleAuthController extends Controller
             Session::put('code_expires', time() + 600); // 10 minutes
             Session::put('user_data', $user[0]); // Store user data from Supabase
 
-            // Send email via Resend
-            $resend = Resend::client(env('RESEND_KEY'));
-            
-            $resend->emails->send([
-                'from' => 'onboarding@resend.dev',
-                'to' => [$email],
-                'subject' => 'Your Connectly Login Code',
-                'html' => "
-                    <h2>Your Login Code</h2>
-                    <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
-                    <p>This code expires in 10 minutes.</p>
-                "
-            ]);
+            // Send email via Laravel Mail with Resend
+            Mail::send([], [], function ($message) use ($email, $code) {
+                $message->to($email)
+                        ->subject('Your Connectly Login Code')
+                        ->html("
+                            <h2>Your Login Code</h2>
+                            <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
+                            <p>This code expires in 10 minutes.</p>
+                        ");
+            });
 
             return redirect()->route('auth.verify')->with('success', 'Login code sent to your email!');
             
@@ -146,19 +143,16 @@ class SimpleAuthController extends Controller
             }
 
             // Send welcome email
-            $resend = Resend::client(env('RESEND_KEY'));
-            
-            $resend->emails->send([
-                'from' => 'onboarding@resend.dev',
-                'to' => [$email],
-                'subject' => 'Welcome to Connectly!',
-                'html' => "
-                    <h2>Welcome to Connectly!</h2>
-                    <p>Hi {$name},</p>
-                    <p>Welcome to Connectly - your modern CRM solution!</p>
-                    <p>You can now login to start managing your customers.</p>
-                "
-            ]);
+            Mail::send([], [], function ($message) use ($email, $name) {
+                $message->to($email)
+                        ->subject('Welcome to Connectly!')
+                        ->html("
+                            <h2>Welcome to Connectly!</h2>
+                            <p>Hi {$name},</p>
+                            <p>Welcome to Connectly - your modern CRM solution!</p>
+                            <p>You can now login to start managing your customers.</p>
+                        ");
+            });
 
             return redirect()->route('login')->with('success', 'Account created! Check your email and then login.');
             
