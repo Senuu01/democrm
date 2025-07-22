@@ -118,26 +118,75 @@ class EmailPasswordAuthController extends Controller
             return back()->withErrors(['verification_code' => 'Verification code is required']);
         }
 
+        \Log::info('Email verification attempt', [
+            'email' => $email,
+            'submitted_code' => $code,
+            'session_data' => session()->all()
+        ]);
+
         try {
             // Get user from database
             $user = $this->supabase->query('auth_users', '*', ['email' => $email]);
             
+            \Log::info('User lookup for verification', [
+                'email' => $email,
+                'user_result' => $user,
+                'is_array' => is_array($user),
+                'count' => is_array($user) ? count($user) : 'not array'
+            ]);
+            
             if (empty($user) || !is_array($user) || count($user) === 0) {
-                return back()->withErrors(['verification_code' => 'User not found']);
+                return back()->withErrors(['verification_code' => 'User not found. Please register again.']);
+            }
+
+            // Safely get user data
+            if (!isset($user[0]) || !is_array($user[0])) {
+                \Log::error('Invalid user data structure for verification', ['user' => $user]);
+                return back()->withErrors(['verification_code' => 'Database error: Invalid user data structure']);
             }
 
             $userData = $user[0];
 
-            // Check verification code and expiry
-            if ($userData['verification_code'] !== $code) {
-                return back()->withErrors(['verification_code' => 'Invalid verification code']);
+            \Log::info('User data for verification', [
+                'user_id' => $userData['id'] ?? 'missing',
+                'stored_code' => $userData['verification_code'] ?? 'missing',
+                'submitted_code' => $code,
+                'verification_expires' => $userData['verification_expires'] ?? 'missing',
+                'email_verified' => $userData['email_verified'] ?? 'missing'
+            ]);
+
+            // Check if already verified
+            if ($userData['email_verified']) {
+                return redirect()->route('login')->with('success', 'Email already verified. Please login.');
             }
 
-            if (strtotime($userData['verification_expires']) < time()) {
-                return back()->withErrors(['verification_code' => 'Verification code has expired. Please request a new one.']);
+            // Check verification code
+            if (!isset($userData['verification_code']) || $userData['verification_code'] !== $code) {
+                \Log::warning('Verification code mismatch', [
+                    'expected' => $userData['verification_code'] ?? 'null',
+                    'received' => $code
+                ]);
+                return back()->withErrors(['verification_code' => 'Invalid verification code. Please check and try again.']);
             }
 
-            // Mark email as verified
+            // Check expiry
+            if (isset($userData['verification_expires']) && $userData['verification_expires']) {
+                $expiryTime = strtotime($userData['verification_expires']);
+                $currentTime = time();
+                
+                \Log::info('Verification expiry check', [
+                    'expires_string' => $userData['verification_expires'],
+                    'expires_timestamp' => $expiryTime,
+                    'current_timestamp' => $currentTime,
+                    'is_expired' => $expiryTime < $currentTime
+                ]);
+                
+                if ($expiryTime < $currentTime) {
+                    return back()->withErrors(['verification_code' => 'Verification code has expired. Please request a new one.']);
+                }
+            }
+
+            // Mark email as verified - Fix: use user ID for update
             $updateData = [
                 'email_verified' => true,
                 'verification_code' => null,
@@ -145,9 +194,17 @@ class EmailPasswordAuthController extends Controller
                 'updated_at' => now()->toISOString()
             ];
 
-            $result = $this->supabase->update('auth_users', $updateData, ['email' => $email]);
+            \Log::info('Updating user verification status', [
+                'user_id' => $userData['id'],
+                'update_data' => $updateData
+            ]);
+
+            $result = $this->supabase->update('auth_users', $userData['id'], $updateData);
+
+            \Log::info('Update result', ['result' => $result]);
 
             if (!$result) {
+                \Log::error('Failed to update user verification status');
                 return back()->withErrors(['verification_code' => 'Verification failed. Please try again.']);
             }
 
@@ -158,14 +215,23 @@ class EmailPasswordAuthController extends Controller
                 'id' => $userData['id'],
                 'name' => $userData['name'],
                 'email' => $userData['email'],
-                'company' => $userData['company']
+                'company' => $userData['company'] ?? ''
+            ]);
+
+            \Log::info('Email verification successful', [
+                'user_id' => $userData['id'],
+                'email' => $email
             ]);
 
             return redirect()->route('dashboard')->with('success', 'Email verified successfully! Welcome to Connectly CRM.');
 
         } catch (\Exception $e) {
-            \Log::error('Email verification error: ' . $e->getMessage());
-            return back()->withErrors(['verification_code' => 'Verification failed. Please try again.']);
+            \Log::error('Email verification error: ' . $e->getMessage(), [
+                'email' => $email,
+                'code' => $code,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['verification_code' => 'Verification failed. Please try again. Error: ' . $e->getMessage()]);
         }
     }
 
@@ -271,7 +337,7 @@ class EmailPasswordAuthController extends Controller
                 'updated_at' => now()->toISOString()
             ];
 
-            $result = $this->supabase->update('auth_users', $updateData, ['email' => $email]);
+            $result = $this->supabase->update('auth_users', $userData['id'], $updateData);
 
             if (!$result) {
                 return back()->withInput()->withErrors(['email' => 'Failed to send reset code']);
@@ -350,7 +416,7 @@ class EmailPasswordAuthController extends Controller
                 'updated_at' => now()->toISOString()
             ];
 
-            $result = $this->supabase->update('auth_users', $updateData, ['email' => $email]);
+            $result = $this->supabase->update('auth_users', $userData['id'], $updateData);
 
             if (!$result) {
                 return back()->withErrors(['reset_code' => 'Password reset failed. Please try again.']);
@@ -361,6 +427,62 @@ class EmailPasswordAuthController extends Controller
         } catch (\Exception $e) {
             \Log::error('Password reset error: ' . $e->getMessage());
             return back()->withErrors(['reset_code' => 'Password reset failed. Please try again.']);
+        }
+    }
+
+    // RESEND VERIFICATION CODE
+
+    public function resendVerificationCode(Request $request)
+    {
+        $email = session('email');
+        
+        if (!$email) {
+            return redirect()->route('auth.email-register')->withErrors(['email' => 'Session expired. Please register again.']);
+        }
+
+        try {
+            // Get user from database
+            $user = $this->supabase->query('auth_users', '*', ['email' => $email]);
+            
+            if (empty($user) || !is_array($user) || count($user) === 0) {
+                return back()->withErrors(['verification_code' => 'User not found. Please register again.']);
+            }
+
+            $userData = $user[0];
+
+            // Check if already verified
+            if ($userData['email_verified']) {
+                return redirect()->route('login')->with('success', 'Email already verified. Please login.');
+            }
+
+            // Generate new verification code
+            $verificationCode = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+
+            // Update user with new code
+            $updateData = [
+                'verification_code' => $verificationCode,
+                'verification_expires' => date('Y-m-d H:i:s', time() + 3600), // 1 hour
+                'updated_at' => now()->toISOString()
+            ];
+
+            $result = $this->supabase->update('auth_users', $userData['id'], $updateData);
+
+            if (!$result) {
+                return back()->withErrors(['verification_code' => 'Failed to resend verification code.']);
+            }
+
+            // Send verification email
+            try {
+                $this->sendVerificationEmail($email, $userData['name'], $verificationCode);
+                return back()->with('success', 'New verification code sent to your email!');
+            } catch (\Exception $mailError) {
+                \Log::error('Resend verification email failed: ' . $mailError->getMessage());
+                return back()->withErrors(['verification_code' => 'Failed to send verification email: ' . $mailError->getMessage()]);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Resend verification error: ' . $e->getMessage());
+            return back()->withErrors(['verification_code' => 'Failed to resend verification code. Please try again.']);
         }
     }
 

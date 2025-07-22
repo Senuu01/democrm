@@ -104,6 +104,7 @@ Route::post('/register', [App\Http\Controllers\EmailPasswordAuthController::clas
 
 Route::get('/verify-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'showEmailVerification'])->name('auth.verify-email-form');
 Route::post('/verify-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'verifyEmail'])->name('auth.verify-email.post');
+Route::post('/resend-verification', [App\Http\Controllers\EmailPasswordAuthController::class, 'resendVerificationCode'])->name('auth.resend-verification');
 
 Route::get('/forgot-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'showForgotPassword'])->name('auth.forgot-password');
 Route::post('/forgot-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'sendResetCode'])->name('auth.send-reset-code');

@@ -194,13 +194,22 @@
                 <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded">
                     <div class="flex items-start">
                         <i class="fas fa-question-circle text-amber-400 mr-3 mt-0.5"></i>
-                        <div>
+                        <div class="flex-1">
                             <p class="text-amber-700 font-semibold text-sm">Didn't receive the code?</p>
-                            <ul class="text-amber-600 text-sm mt-1 space-y-1">
+                            <ul class="text-amber-600 text-sm mt-1 space-y-1 mb-3">
                                 <li>• Check your spam/junk folder</li>
                                 <li>• Make sure the email address is correct</li>
                                 <li>• Wait a few minutes and try again</li>
                             </ul>
+                            
+                            <!-- Resend Button -->
+                            <form method="POST" action="{{ route('auth.resend-verification') }}" class="inline">
+                                @csrf
+                                <button type="submit" 
+                                        class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                                    <i class="fas fa-paper-plane mr-1"></i>Resend Code
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
