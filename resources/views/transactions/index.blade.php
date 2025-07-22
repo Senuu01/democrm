@@ -58,74 +58,74 @@
                                 @foreach($transactions as $transaction)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {{ $transaction->transaction_number }}
+                                            {{ $transaction['id'] ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $transaction->customer->name }}
+                                            {{ $transaction['customer']['name'] ?? 'N/A' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($transaction->invoice)
-                                                <a href="{{ route('invoices.show', $transaction->invoice) }}" class="text-indigo-600 hover:text-indigo-900">
-                                                    {{ $transaction->invoice->invoice_number }}
+                                            @if($transaction['invoice'])
+                                                <a href="{{ route('invoices.show', $transaction['invoice']['id']) }}" class="text-indigo-600 hover:text-indigo-900">
+                                                    {{ $transaction['invoice']['invoice_number'] ?? 'N/A' }}
                                                 </a>
                                             @else
                                                 -
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            ${{ number_format($transaction->amount, 2) }}
+                                            ${{ number_format($transaction['amount'] ?? 0, 2) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ ucfirst($transaction->payment_method) }}
+                                            {{ ucfirst($transaction['payment_method'] ?? 'N/A') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center space-x-2">
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    @if($transaction->status === 'completed') bg-green-100 text-green-800
-                                                    @elseif($transaction->status === 'failed') bg-red-100 text-red-800
-                                                    @elseif($transaction->status === 'expired') bg-orange-100 text-orange-800
-                                                    @elseif($transaction->status === 'refunded') bg-yellow-100 text-yellow-800
-                                                    @elseif($transaction->status === 'pending') bg-blue-100 text-blue-800
-                                                    @elseif($transaction->status === 'cancelled') bg-gray-100 text-gray-800
+                                                    @if(($transaction['status'] ?? 'pending') === 'completed') bg-green-100 text-green-800
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'failed') bg-red-100 text-red-800
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'expired') bg-orange-100 text-orange-800
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'refunded') bg-yellow-100 text-yellow-800
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'pending') bg-blue-100 text-blue-800
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'cancelled') bg-gray-100 text-gray-800
                                                     @else bg-gray-100 text-gray-800
                                                     @endif">
-                                                    @if($transaction->status === 'completed')
+                                                    @if(($transaction['status'] ?? 'pending') === 'completed')
                                                         ✓ Payment Successful
-                                                    @elseif($transaction->status === 'failed')
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'failed')
                                                         ✗ Payment Failed
-                                                    @elseif($transaction->status === 'expired')
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'expired')
                                                         ⏰ Payment Expired
-                                                    @elseif($transaction->status === 'refunded')
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'refunded')
                                                         ↩ Refunded
-                                                    @elseif($transaction->status === 'pending')
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'pending')
                                                         ⏳ Pending
-                                                    @elseif($transaction->status === 'cancelled')
+                                                    @elseif(($transaction['status'] ?? 'pending') === 'cancelled')
                                                         ❌ Payment Cancelled
                                                     @else
-                                                        {{ ucfirst($transaction->status) }}
+                                                        {{ ucfirst($transaction['status'] ?? 'pending') }}
                                                     @endif
                                                 </span>
-                                                @if($transaction->stripe_session_id || $transaction->stripe_payment_intent_id)
+                                                @if(($transaction['stripe_session_id'] ?? '') || ($transaction['stripe_payment_intent_id'] ?? ''))
                                                     <span class="text-xs text-gray-400" title="Connected to Stripe">🔗</span>
                                                 @endif
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $transaction->created_at->format('M d, Y H:i:s') }}
+                                            {{ \Carbon\Carbon::parse($transaction['created_at'] ?? now())->format('M d, Y H:i:s') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div class="flex space-x-2">
-                                                <a href="{{ route('transactions.show', $transaction) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                                <a href="{{ route('transactions.show', $transaction['id']) }}" class="text-indigo-600 hover:text-indigo-900">View</a>
                                                 
-                                                @if(in_array($transaction->status, ['pending', 'failed']) && ($transaction->stripe_session_id || $transaction->stripe_payment_intent_id))
-                                                    <form action="{{ route('transactions.sync', $transaction) }}" method="POST" class="inline">
+                                                @if(in_array($transaction['status'] ?? 'pending', ['pending', 'failed']) && (($transaction['stripe_session_id'] ?? '') || ($transaction['stripe_payment_intent_id'] ?? '')))
+                                                    <form action="{{ route('transactions.sync', $transaction['id']) }}" method="POST" class="inline">
                                                         @csrf
                                                         <button type="submit" class="text-blue-600 hover:text-blue-900" title="Sync with Stripe">Sync</button>
                                                     </form>
                                                 @endif
                                                 
-                                                @if($transaction->status === 'completed')
-                                                    <form action="{{ route('transactions.refund', $transaction) }}" method="POST" class="inline">
+                                                @if(($transaction['status'] ?? 'pending') === 'completed')
+                                                    <form action="{{ route('transactions.refund', $transaction['id']) }}" method="POST" class="inline">
                                                         @csrf
                                                         @method('POST')
                                                         <button type="submit" class="text-yellow-600 hover:text-yellow-900" onclick="return confirm('Are you sure you want to refund this transaction?')">Refund</button>
@@ -139,9 +139,11 @@
                         </table>
                     </div>
 
-                    <div class="mt-4">
-                        {{ $transactions->links() }}
-                    </div>
+                    @if(empty($transactions))
+                        <div class="text-center py-8">
+                            <p class="text-gray-500">No transactions found.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

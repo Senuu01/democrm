@@ -2,21 +2,65 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
-use App\Models\Invoice;
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
+    protected $supabase;
+
+    public function __construct(SupabaseService $supabase)
+    {
+        $this->supabase = $supabase;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $transactions = Transaction::with(['customer', 'invoice'])
-            ->latest()
-            ->paginate(10);
-        return view('transactions.index', compact('transactions'));
+        try {
+            // Get all transactions from Supabase
+            $transactions = $this->supabase->query('transactions', '*');
+            
+            if (!is_array($transactions)) {
+                $transactions = [];
+            }
+
+            // Get customers and invoices for linking
+            $customers = $this->supabase->query('customers', 'id,name,email,company');
+            $customersById = [];
+            if (is_array($customers)) {
+                foreach ($customers as $customer) {
+                    $customersById[$customer['id']] = $customer;
+                }
+            }
+
+            $invoices = $this->supabase->query('invoices', 'id,invoice_number,title,amount');
+            $invoicesById = [];
+            if (is_array($invoices)) {
+                foreach ($invoices as $invoice) {
+                    $invoicesById[$invoice['id']] = $invoice;
+                }
+            }
+
+            // Add customer and invoice data to transactions
+            foreach ($transactions as &$transaction) {
+                $transaction['customer'] = $customersById[$transaction['customer_id']] ?? null;
+                $transaction['invoice'] = $invoicesById[$transaction['invoice_id']] ?? null;
+            }
+
+            // Sort by created_at desc (latest first)
+            usort($transactions, function($a, $b) {
+                return strtotime($b['created_at'] ?? '1970-01-01') - strtotime($a['created_at'] ?? '1970-01-01');
+            });
+
+            return view('transactions.index', compact('transactions'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Transaction index error: ' . $e->getMessage());
+            return view('transactions.index', ['transactions' => []]);
+        }
     }
 
     /**
@@ -38,9 +82,38 @@ class TransactionController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Transaction $transaction)
+    public function show($id)
     {
-        return view('transactions.show', compact('transaction'));
+        try {
+            // Get transaction from Supabase
+            $transactions = $this->supabase->query('transactions', '*', ['id' => $id]);
+            
+            if (empty($transactions) || !is_array($transactions)) {
+                return redirect()->route('transactions.index')
+                    ->with('error', 'Transaction not found.');
+            }
+
+            $transaction = $transactions[0];
+
+            // Get related customer
+            if (isset($transaction['customer_id'])) {
+                $customers = $this->supabase->query('customers', '*', ['id' => $transaction['customer_id']]);
+                $transaction['customer'] = !empty($customers) ? $customers[0] : null;
+            }
+
+            // Get related invoice
+            if (isset($transaction['invoice_id'])) {
+                $invoices = $this->supabase->query('invoices', '*', ['id' => $transaction['invoice_id']]);
+                $transaction['invoice'] = !empty($invoices) ? $invoices[0] : null;
+            }
+
+            return view('transactions.show', compact('transaction'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Transaction show error: ' . $e->getMessage());
+            return redirect()->route('transactions.index')
+                ->with('error', 'Failed to load transaction.');
+        }
     }
 
     /**
