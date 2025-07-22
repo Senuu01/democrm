@@ -8,6 +8,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomLoginController;
+use App\Http\Controllers\SupabaseController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -54,5 +55,12 @@ Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController
 
 Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
 Route::post('/login', [CustomLoginController::class, 'login']);
+
+// Supabase routes (for testing and data operations)
+Route::get('/supabase/customers', [SupabaseController::class, 'customers'])->name('supabase.customers');
+Route::post('/supabase/customers', [SupabaseController::class, 'storeCustomer'])->name('supabase.customers.store');
+Route::get('/supabase/proposals', [SupabaseController::class, 'proposals'])->name('supabase.proposals');
+Route::post('/supabase/proposals', [SupabaseController::class, 'storeProposal'])->name('supabase.proposals.store');
+Route::get('/supabase/setup', [SupabaseController::class, 'createTables'])->name('supabase.setup');
 
 require __DIR__.'/auth.php';
