@@ -2,10 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-// use App\Http\Controllers\Api\CustomerController;
-// use App\Http\Controllers\Api\ProposalController;
-// use App\Http\Controllers\Api\InvoiceController;
-// use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,67 +16,128 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Authentication routes - API controllers not yet implemented
-// Route::post('/login', [AuthController::class, 'login']);
-// Route::post('/register', [AuthController::class, 'register']);
+// API Authentication Routes
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [ApiAuthController::class, 'login'])->name('api.auth.login');
+    Route::post('/refresh', [ApiAuthController::class, 'refresh'])->middleware('api.auth')->name('api.auth.refresh');
+    Route::get('/me', [ApiAuthController::class, 'me'])->middleware('api.auth')->name('api.auth.me');
+    Route::post('/logout', [ApiAuthController::class, 'logout'])->middleware('api.auth')->name('api.auth.logout');
+});
 
-// Route::middleware('auth:sanctum')->group(function () {
-//     // User info
-//     Route::get('/user', function (Request $request) {
-//         return $request->user();
-//     });
-//     
-//     Route::post('/logout', [AuthController::class, 'logout']);
-//     
-//     // Customer API endpoints
-//     Route::apiResource('customers', CustomerController::class)->names([
-//         'index' => 'api.customers.index',
-//         'store' => 'api.customers.store',
-//         'show' => 'api.customers.show',
-//         'update' => 'api.customers.update',
-//         'destroy' => 'api.customers.destroy',
-//     ]);
-//     Route::post('customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('api.customers.toggle-status');
-//     
-//     // Proposal API endpoints
-//     Route::apiResource('proposals', ProposalController::class)->names([
-//         'index' => 'api.proposals.index',
-//         'store' => 'api.proposals.store',
-//         'show' => 'api.proposals.show',
-//         'update' => 'api.proposals.update',
-//         'destroy' => 'api.proposals.destroy',
-//     ]);
-//     Route::post('proposals/{proposal}/send-email', [ProposalController::class, 'sendEmail'])->name('api.proposals.send-email');
-//     Route::patch('proposals/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('api.proposals.status');
-//     
-//     // Invoice API endpoints
-//     Route::apiResource('invoices', InvoiceController::class)->names([
-//         'index' => 'api.invoices.index',
-//         'store' => 'api.invoices.store',
-//         'show' => 'api.invoices.show',
-//         'update' => 'api.invoices.update',
-//         'destroy' => 'api.invoices.destroy',
-//     ]);
-//     Route::post('invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('api.invoices.send');
-//     Route::patch('invoices/{invoice}/status', [InvoiceController::class, 'changeStatus'])->name('api.invoices.status');
-//     
-//     // Analytics endpoints (admin only)
-//     Route::middleware('admin')->group(function () {
-//         Route::get('/analytics/dashboard', function () {
-//             $dashboardController = new \App\Http\Controllers\DashboardController();
-//             $data = $dashboardController->index()->getData();
-//             return response()->json($data);
-//         });
-//         
-//         Route::get('/analytics/revenue', function () {
-//             $revenue = \App\Models\Transaction::where('status', 'completed')
-//                 ->selectRaw('DATE(created_at) as date, SUM(amount) as total')
-//                 ->groupBy('date')
-//                 ->orderBy('date', 'desc')
-//                 ->take(30)
-//                 ->get();
-//             
-//             return response()->json(['revenue' => $revenue]);
-//         });
-//     });
-// });
+// Protected API Routes
+Route::middleware('api.auth')->group(function () {
+    
+    // Customer Management API
+    Route::prefix('customers')->name('api.customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::post('/', [CustomerController::class, 'store'])->name('store');
+        Route::get('/stats', [CustomerController::class, 'stats'])->name('stats');
+        Route::post('/bulk', [CustomerController::class, 'bulk'])->name('bulk');
+        Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
+        Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
+        Route::patch('/{id}', [CustomerController::class, 'update'])->name('patch');
+        Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
+    
+    // Health Check
+    Route::get('/health', function () {
+        return response()->json([
+            'success' => true,
+            'message' => 'API is healthy',
+            'timestamp' => now()->toISOString(),
+            'version' => '1.0.0',
+            'environment' => config('app.env'),
+            'database' => 'Supabase',
+            'services' => [
+                'supabase' => config('services.supabase.url') ? 'connected' : 'disconnected',
+                'mail' => config('mail.mailers.smtp.host') ? 'configured' : 'not configured'
+            ]
+        ]);
+    })->name('api.health');
+    
+    // User Info
+    Route::get('/user', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'message' => 'User information retrieved successfully',
+            'data' => $request->user()
+        ]);
+    })->name('api.user');
+});
+
+// Public API Info
+Route::get('/info', function () {
+    return response()->json([
+        'name' => 'Connectly CRM API',
+        'version' => '1.0.0',
+        'description' => 'REST API for Connectly CRM system',
+        'documentation' => url('/api/docs'),
+        'base_url' => url('/api'),
+        'endpoints' => [
+            'authentication' => [
+                'POST /api/auth/login' => 'Login and get access token',
+                'POST /api/auth/refresh' => 'Refresh access token',
+                'GET /api/auth/me' => 'Get current user info',
+                'POST /api/auth/logout' => 'Logout and invalidate token'
+            ],
+            'customers' => [
+                'GET /api/customers' => 'Get customers list with pagination and search',
+                'POST /api/customers' => 'Create new customer',
+                'GET /api/customers/{id}' => 'Get specific customer with optional includes',
+                'PUT /api/customers/{id}' => 'Update customer (full update)',
+                'PATCH /api/customers/{id}' => 'Update customer (partial update)',
+                'DELETE /api/customers/{id}' => 'Soft delete customer',
+                'GET /api/customers/stats' => 'Get customer statistics',
+                'POST /api/customers/bulk' => 'Bulk operations (delete/update_status)'
+            ],
+            'system' => [
+                'GET /api/health' => 'API health check',
+                'GET /api/user' => 'Get current authenticated user',
+                'GET /api/info' => 'Get API information (this endpoint)'
+            ]
+        ],
+        'authentication' => [
+            'type' => 'Bearer Token',
+            'header' => 'Authorization: Bearer {token}',
+            'expires' => '30 days',
+            'refresh' => 'Use /api/auth/refresh endpoint'
+        ],
+        'pagination' => [
+            'default_limit' => 10,
+            'max_limit' => 100,
+            'parameters' => ['limit', 'offset']
+        ],
+        'search' => [
+            'customers' => 'Search by name, email, or company',
+            'parameter' => 'search'
+        ],
+        'filtering' => [
+            'customers' => 'Filter by status (active/inactive/prospect)',
+            'parameter' => 'status'
+        ],
+        'sorting' => [
+            'parameter' => 'sort',
+            'order_parameter' => 'order',
+            'default' => 'created_at.desc'
+        ],
+        'rate_limit' => '1000 requests per hour',
+        'response_format' => [
+            'success' => 'boolean',
+            'message' => 'string',
+            'data' => 'object|array',
+            'meta' => 'object (for paginated responses)',
+            'errors' => 'object (for validation errors)'
+        ],
+        'status_codes' => [
+            200 => 'Success',
+            201 => 'Created',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            409 => 'Conflict (duplicate data)',
+            422 => 'Validation Error',
+            500 => 'Internal Server Error'
+        ]
+    ]);
+})->name('api.info');

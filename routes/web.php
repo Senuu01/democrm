@@ -152,6 +152,11 @@ Route::middleware(['simple.auth'])->group(function () {
     Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
 });
 
+// API DOCUMENTATION (Public)
+Route::get('/api/docs', function () {
+    return view('api.docs');
+})->name('api.docs');
+
 // Stripe webhook (no auth required)
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
