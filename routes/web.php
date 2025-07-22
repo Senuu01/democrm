@@ -163,46 +163,147 @@ Route::get('/test-session', function() {
 Route::get('/setup-supabase', [App\Http\Controllers\SupabaseSetupController::class, 'setupDatabase'])->name('setup.supabase');
 Route::get('/check-tables', [App\Http\Controllers\SupabaseSetupController::class, 'checkTables'])->name('check.tables');
 
-// Setup route to create Supabase users table
-Route::get('/setup-database', function() {
+// Clear all database tables
+Route::get('/clear-database', function() {
     try {
-        $supabase = app(\App\Services\SupabaseService::class);
+        // Clear all tables via HTTP DELETE
+        $tables = ['transactions', 'invoices', 'proposals', 'customers', 'auth_users'];
+        $results = [];
         
-        // First, try to create the users table directly via SQL
-        $response = \Illuminate\Support\Facades\Http::withHeaders([
-            'apikey' => config('services.supabase.service_role_key'),
-            'Authorization' => 'Bearer ' . config('services.supabase.service_role_key'),
-            'Content-Type' => 'application/json',
-        ])->post(config('services.supabase.url') . '/rest/v1/rpc/exec', [
-            'sql' => "
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    email VARCHAR(255) UNIQUE NOT NULL,
-                    company VARCHAR(255),
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                );
+        foreach ($tables as $table) {
+            try {
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'apikey' => config('services.supabase.service_role_key'),
+                    'Authorization' => 'Bearer ' . config('services.supabase.service_role_key'),
+                ])->delete(config('services.supabase.url') . "/rest/v1/{$table}?id=not.is.null");
                 
-                -- Insert a test user
-                INSERT INTO users (name, email, company) 
-                VALUES ('Test User', 'test@example.com', 'Test Company')
-                ON CONFLICT (email) DO NOTHING;
-            "
-        ]);
+                $results[$table] = $response->successful() ? 'cleared' : 'failed';
+            } catch (Exception $e) {
+                $results[$table] = 'error: ' . $e->getMessage();
+            }
+        }
         
         return response()->json([
             'status' => 'success',
-            'message' => 'Database setup complete',
-            'response' => $response->json()
+            'message' => 'Database clear attempted',
+            'results' => $results
         ]);
         
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => 'Database setup failed: ' . $e->getMessage()
+            'message' => 'Database clear failed: ' . $e->getMessage()
         ], 500);
     }
+});
+
+// Setup database tables
+Route::get('/setup-database', function() {
+    $sql = "
+-- Create auth_users table for custom authentication
+CREATE TABLE IF NOT EXISTS auth_users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    company VARCHAR(255),
+    email_verified BOOLEAN DEFAULT FALSE,
+    verification_code VARCHAR(10),
+    verification_expires TIMESTAMP,
+    reset_code VARCHAR(10),
+    reset_expires TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create customers table
+CREATE TABLE IF NOT EXISTS customers (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(50),
+    company VARCHAR(255),
+    address TEXT,
+    status VARCHAR(50) DEFAULT 'active',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create proposals table
+CREATE TABLE IF NOT EXISTS proposals (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'draft',
+    valid_until DATE,
+    terms TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create invoices table
+CREATE TABLE IF NOT EXISTS invoices (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE,
+    proposal_id BIGINT REFERENCES proposals(id) ON DELETE SET NULL,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'draft',
+    due_date DATE,
+    paid_at TIMESTAMP,
+    stripe_payment_intent_id VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create transactions table
+CREATE TABLE IF NOT EXISTS transactions (
+    id BIGSERIAL PRIMARY KEY,
+    invoice_id BIGINT REFERENCES invoices(id) ON DELETE CASCADE,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE CASCADE,
+    stripe_payment_intent_id VARCHAR(255) UNIQUE,
+    stripe_charge_id VARCHAR(255),
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(50) DEFAULT 'pending',
+    payment_method VARCHAR(50),
+    currency VARCHAR(3) DEFAULT 'USD',
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_customers_email ON customers(email);
+CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_proposals_customer_id ON proposals(customer_id);
+CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
+CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id);
+CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON invoices(invoice_number);
+CREATE INDEX IF NOT EXISTS idx_transactions_invoice_id ON transactions(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_stripe_payment_intent_id ON transactions(stripe_payment_intent_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
+";
+
+    return response()->json([
+        'status' => 'ready',
+        'message' => 'Copy this SQL to your Supabase SQL Editor and run it:',
+        'sql' => $sql,
+        'instructions' => [
+            '1. Go to your Supabase Dashboard',
+            '2. Click on SQL Editor in the left sidebar', 
+            '3. Create a new query',
+            '4. Copy and paste the SQL above',
+            '5. Click Run to execute',
+            '6. All tables will be created with proper relationships'
+        ]
+    ]);
 });
 
 // require __DIR__.'/auth.php'; // Commented out to use SimpleAuth instead

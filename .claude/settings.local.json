@@ -14,7 +14,8 @@
       "Bash(composer install:*)",
       "Bash(railway status:*)",
       "Bash(touch:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(php:*)"
     ],
     "deny": []
   }
