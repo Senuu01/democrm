@@ -19,6 +19,23 @@ Route::get('/health', function () {
     ]);
 });
 
+Route::get('/clear-cache', function() {
+    try {
+        \Artisan::call('route:clear');
+        \Artisan::call('config:clear');
+        \Artisan::call('view:clear');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Cache cleared successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
 Route::get('/', function () {
     try {
         return view('welcome');
