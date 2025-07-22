@@ -121,10 +121,30 @@ class SimpleAuthController extends Controller
             return back()->withErrors(['code' => 'Invalid code']);
         }
         
-        // Login successful
+        // Login successful - get user data that was stored during sendLoginCode
+        $userData = Session::get('user_data');
+        
+        \Log::info('Code verification successful', [
+            'email' => $email,
+            'user_data' => $userData,
+            'session_before' => Session::all()
+        ]);
+        
         Session::put('authenticated', true);
         Session::put('user_email', $email);
-        Session::forget(['login_code', 'code_expires']);
+        
+        // Ensure user data is properly set
+        if ($userData) {
+            Session::put('user_data', $userData);
+        }
+        
+        Session::forget(['login_code', 'code_expires', 'login_email']);
+        
+        \Log::info('Session after login setup', [
+            'authenticated' => Session::get('authenticated'),
+            'user_email' => Session::get('user_email'),
+            'user_data' => Session::get('user_data')
+        ]);
         
         return redirect()->route('dashboard');
     }

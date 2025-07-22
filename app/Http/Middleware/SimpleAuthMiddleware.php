@@ -17,7 +17,17 @@ class SimpleAuthMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Session::get('authenticated')) {
+        $authenticated = Session::get('authenticated');
+        $userEmail = Session::get('user_email');
+        
+        \Log::info('SimpleAuth Middleware Check', [
+            'authenticated' => $authenticated,
+            'user_email' => $userEmail,
+            'session_data' => Session::all()
+        ]);
+        
+        if (!$authenticated) {
+            \Log::info('User not authenticated, redirecting to login');
             return redirect()->route('login')->with('error', 'Please login to access this page.');
         }
 
