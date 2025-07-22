@@ -76,6 +76,18 @@ class SupabaseService
         return $response->successful();
     }
 
+    public function deleteAll($table)
+    {
+        $url = "{$this->baseUrl}/rest/v1/{$table}?id=not.is.null";
+
+        $response = Http::withHeaders([
+            'apikey' => $this->serviceKey,
+            'Authorization' => "Bearer {$this->serviceKey}",
+        ])->delete($url);
+
+        return $response->successful();
+    }
+
     public function signUp($email, $password)
     {
         $url = "{$this->baseUrl}/auth/v1/signup";

@@ -242,8 +242,21 @@ class EmailPasswordAuthController extends Controller
             // Check if user exists
             $user = $this->supabase->query('auth_users', '*', ['email' => $email]);
             
+            \Log::info('Password reset user lookup', [
+                'email' => $email,
+                'user_result' => $user,
+                'is_array' => is_array($user),
+                'count' => is_array($user) ? count($user) : 'not array'
+            ]);
+            
             if (empty($user) || !is_array($user) || count($user) === 0) {
-                return back()->withInput()->withErrors(['email' => 'Email not found']);
+                return back()->withInput()->withErrors(['email' => 'Email not found in database. Please register first or check your email address.']);
+            }
+
+            // Safely get user data
+            if (!isset($user[0]) || !is_array($user[0])) {
+                \Log::error('Invalid user data structure', ['user' => $user]);
+                return back()->withInput()->withErrors(['email' => 'Database error: Invalid user data structure']);
             }
 
             $userData = $user[0];
@@ -384,6 +397,70 @@ class EmailPasswordAuthController extends Controller
             return response()->json(['success' => 'Test email sent successfully to ' . $testEmail]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to send test email: ' . $e->getMessage()]);
+        }
+    }
+
+    // CREATE TEST USER (for debugging)
+    public function createTestUser(Request $request)
+    {
+        $email = $request->input('email', 'test@example.com');
+        $password = $request->input('password', 'password123');
+        $name = $request->input('name', 'Test User');
+        
+        try {
+            // Check if user already exists
+            $existingUser = $this->supabase->query('auth_users', '*', ['email' => $email]);
+            
+            if (!empty($existingUser) && is_array($existingUser) && count($existingUser) > 0) {
+                return response()->json(['error' => 'User already exists with email: ' . $email]);
+            }
+
+            // Create test user
+            $userData = [
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'company' => 'Test Company',
+                'email_verified' => true,
+                'created_at' => now()->toISOString(),
+                'updated_at' => now()->toISOString()
+            ];
+
+            $result = $this->supabase->insert('auth_users', $userData);
+            
+            if (!$result || (is_array($result) && isset($result['error']))) {
+                $errorMessage = is_array($result) && isset($result['error']) ? $result['error']['message'] : 'Failed to create user';
+                return response()->json(['error' => 'Failed to create test user: ' . $errorMessage]);
+            }
+
+            return response()->json([
+                'success' => 'Test user created successfully',
+                'email' => $email,
+                'password' => $password,
+                'message' => 'You can now test password reset with this user'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Create test user error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to create test user: ' . $e->getMessage()]);
+        }
+    }
+
+    // CLEAR ALL USERS (for debugging)
+    public function clearAllUsers()
+    {
+        try {
+            // This will delete all users from auth_users table
+            $result = $this->supabase->deleteAll('auth_users');
+            
+            return response()->json([
+                'success' => 'All users cleared from database',
+                'message' => 'You can now register new users from scratch'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Clear users error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to clear users: ' . $e->getMessage()]);
         }
     }
 

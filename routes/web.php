@@ -116,6 +116,15 @@ Route::post('/logout', [App\Http\Controllers\EmailPasswordAuthController::class,
 // Test email route (for debugging mail configuration)
 Route::get('/test-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'testEmail'])->name('test.email');
 
+// Database debugging routes
+Route::get('/create-test-user', [App\Http\Controllers\EmailPasswordAuthController::class, 'createTestUser'])->name('test.create-user');
+Route::get('/clear-all-users', [App\Http\Controllers\EmailPasswordAuthController::class, 'clearAllUsers'])->name('test.clear-users');
+
+// Debug page
+Route::get('/debug', function () {
+    return view('debug');
+})->name('debug');
+
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
 // Route::post('/login', [CustomLoginController::class, 'login']);
