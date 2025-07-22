@@ -97,8 +97,8 @@
     <div class="min-h-screen bg-gradient-to-r from-blue-50 to-white">
         <!-- Navigation -->
         <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                <a href="/" class="text-3xl font-extrabold text-indigo-600 animate-fadeIn" style="animation-delay: 0.2s;">Connectly</a>
+            <div class="w-full px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <a href="/" class="text-3xl font-extrabold text-indigo-600 animate-fadeIn mr-auto" style="animation-delay: 0.2s;">Connectly</a>
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('login') }}" class="text-gray-600 hover:text-gray-900 animate-fadeIn" style="animation-delay: 0.4s;">Login</a>
                     <a href="{{ route('register') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 animate-fadeIn" style="animation-delay: 0.6s;">Get Started</a>
