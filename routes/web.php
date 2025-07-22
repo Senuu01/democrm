@@ -104,8 +104,11 @@ Route::middleware(['simple.auth'])->group(function () {
     // Route::post('/proposals/{proposal}/send-email', [ProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
     
     // SUPABASE-BASED ROUTES (These work!)
-    Route::get('/customers', [SupabaseController::class, 'customers'])->name('customers.index');
-    Route::post('/customers', [SupabaseController::class, 'storeCustomer'])->name('customers.store');
+    Route::resource('customers', SupabaseCustomerController::class);
+    Route::post('/customers/{customer}/toggle-status', [SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
+    Route::post('/customers/bulk-action', [SupabaseCustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+    Route::get('/customers-export', [SupabaseCustomerController::class, 'export'])->name('customers.export');
+    
     Route::get('/proposals', [SupabaseController::class, 'proposals'])->name('proposals.index');
     Route::post('/proposals', [SupabaseController::class, 'storeProposal'])->name('proposals.store');
 });
