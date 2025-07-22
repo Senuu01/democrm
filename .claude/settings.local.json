@@ -11,7 +11,8 @@
       "Bash(mv:*)",
       "Bash(cp:*)",
       "Bash(ls:*)",
-      "Bash(composer install:*)"
+      "Bash(composer install:*)",
+      "Bash(railway status:*)"
     ],
     "deny": []
   }
