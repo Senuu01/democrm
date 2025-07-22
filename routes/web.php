@@ -103,12 +103,18 @@ Route::middleware(['simple.auth'])->group(function () {
     // Route::post('/proposals/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('proposals.updateStatus');
     // Route::post('/proposals/{proposal}/send-email', [ProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
     
-    // SUPABASE-BASED ROUTES (These work!)
-    Route::resource('customers', SupabaseCustomerController::class);
-    Route::post('/customers/{customer}/toggle-status', [SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
-    Route::post('/customers/bulk-action', [SupabaseCustomerController::class, 'bulkAction'])->name('customers.bulk-action');
-    Route::get('/customers-export', [SupabaseCustomerController::class, 'export'])->name('customers.export');
+    // SUPABASE-BASED CUSTOMER MANAGEMENT (Full CRUD)
+    Route::get('/customers', [App\Http\Controllers\SupabaseCustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/create', [App\Http\Controllers\SupabaseCustomerController::class, 'create'])->name('customers.create');
+    Route::post('/customers', [App\Http\Controllers\SupabaseCustomerController::class, 'store'])->name('customers.store');
+    Route::get('/customers/{id}', [App\Http\Controllers\SupabaseCustomerController::class, 'show'])->name('customers.show');
+    Route::get('/customers/{id}/edit', [App\Http\Controllers\SupabaseCustomerController::class, 'edit'])->name('customers.edit');
+    Route::put('/customers/{id}', [App\Http\Controllers\SupabaseCustomerController::class, 'update'])->name('customers.update');
+    Route::delete('/customers/{id}', [App\Http\Controllers\SupabaseCustomerController::class, 'destroy'])->name('customers.destroy');
+    Route::post('/customers/{id}/toggle-status', [App\Http\Controllers\SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
+    Route::get('/customers-export', [App\Http\Controllers\SupabaseCustomerController::class, 'export'])->name('customers.export');
     
+    // PROPOSALS (Legacy routes - will be updated later)
     Route::get('/proposals', [SupabaseController::class, 'proposals'])->name('proposals.index');
     Route::post('/proposals', [SupabaseController::class, 'storeProposal'])->name('proposals.store');
 });

@@ -111,13 +111,13 @@
                     <div class="p-6">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-database text-2xl text-purple-500"></i>
+                                <i class="fas fa-users text-2xl text-purple-500"></i>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Supabase Setup</h3>
-                                <p class="text-sm text-gray-600">Set up your database tables</p>
-                                <a href="/setup-supabase" class="text-purple-600 hover:text-purple-500 text-sm font-medium">
-                                    Setup Database →
+                                <h3 class="text-lg font-medium text-gray-900">Customer Management</h3>
+                                <p class="text-sm text-gray-600">Manage your customer relationships</p>
+                                <a href="{{ route('customers.index') }}" class="text-purple-600 hover:text-purple-500 text-sm font-medium">
+                                    Manage Customers →
                                 </a>
                             </div>
                         </div>

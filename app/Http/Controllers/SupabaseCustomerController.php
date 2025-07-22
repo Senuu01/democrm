@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
 
 class SupabaseCustomerController extends Controller
 {
@@ -29,75 +28,58 @@ class SupabaseCustomerController extends Controller
                 $customers = [];
             }
 
-            // Apply search filter
-            $search = $request->get('search');
-            if ($search) {
-                $customers = array_filter($customers, function ($customer) use ($search) {
-                    return stripos($customer['name'], $search) !== false ||
-                           stripos($customer['email'], $search) !== false ||
-                           stripos($customer['company'], $search) !== false;
+            // Filter by search if provided
+            if ($request->filled('search')) {
+                $search = strtolower($request->search);
+                $customers = array_filter($customers, function($customer) use ($search) {
+                    return str_contains(strtolower($customer['name'] ?? ''), $search) ||
+                           str_contains(strtolower($customer['email'] ?? ''), $search) ||
+                           str_contains(strtolower($customer['company'] ?? ''), $search);
                 });
             }
 
-            // Apply status filter
-            $status = $request->get('status');
-            if ($status && $status !== 'all') {
-                $customers = array_filter($customers, function ($customer) use ($status) {
-                    return $customer['status'] === $status;
+            // Filter by status if provided
+            if ($request->filled('status')) {
+                $customers = array_filter($customers, function($customer) use ($request) {
+                    return ($customer['status'] ?? 'active') === $request->status;
                 });
             }
 
-            // Sort customers
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            
-            usort($customers, function ($a, $b) use ($sortBy, $sortOrder) {
-                $valueA = $a[$sortBy] ?? '';
-                $valueB = $b[$sortBy] ?? '';
-                
-                if ($sortOrder === 'desc') {
-                    return $valueB <=> $valueA;
-                }
-                return $valueA <=> $valueB;
+            // Sort customers by created_at (newest first)
+            usort($customers, function($a, $b) {
+                return strtotime($b['created_at'] ?? '0') - strtotime($a['created_at'] ?? '0');
             });
 
             // Simple pagination
-            $perPage = 15;
+            $perPage = 10;
             $page = $request->get('page', 1);
             $offset = ($page - 1) * $perPage;
             $paginatedCustomers = array_slice($customers, $offset, $perPage);
-            
-            // Calculate stats
+            $totalPages = ceil(count($customers) / $perPage);
+
+            // Calculate statistics
             $stats = [
                 'total' => count($customers),
-                'active' => count(array_filter($customers, fn($c) => $c['status'] === 'active')),
-                'inactive' => count(array_filter($customers, fn($c) => $c['status'] === 'inactive')),
+                'active' => count(array_filter($customers, fn($c) => ($c['status'] ?? 'active') === 'active')),
+                'inactive' => count(array_filter($customers, fn($c) => ($c['status'] ?? 'active') === 'inactive')),
             ];
 
-            // For API requests
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'customers' => $paginatedCustomers,
-                    'stats' => $stats,
-                    'pagination' => [
-                        'current_page' => $page,
-                        'per_page' => $perPage,
-                        'total' => count($customers),
-                        'total_pages' => ceil(count($customers) / $perPage)
-                    ]
-                ]);
-            }
+            return view('customers.index', [
+                'customers' => $paginatedCustomers,
+                'stats' => $stats,
+                'currentPage' => $page,
+                'totalPages' => $totalPages,
+                'search' => $request->search,
+                'status' => $request->status
+            ]);
 
-            return view('customers.index', compact('paginatedCustomers', 'stats', 'search', 'status'));
-            
         } catch (\Exception $e) {
             \Log::error('Customer index error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Failed to load customers'], 500);
-            }
-            
-            return back()->with('error', 'Failed to load customers: ' . $e->getMessage());
+            return view('customers.index', [
+                'customers' => [],
+                'stats' => ['total' => 0, 'active' => 0, 'inactive' => 0],
+                'error' => 'Failed to load customers: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -114,114 +96,85 @@ class SupabaseCustomerController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            return back()->withErrors($validator)->withInput();
-        }
-
         try {
             // Check if email already exists
-            $existingCustomers = $this->supabase->query('customers', '*', ['email' => $request->email]);
+            $existingCustomers = $this->supabase->query('customers', '*', ['email' => $validated['email']]);
             if (!empty($existingCustomers) && is_array($existingCustomers) && count($existingCustomers) > 0) {
-                if ($request->expectsJson()) {
-                    return response()->json(['error' => 'Email already exists'], 422);
-                }
-                return back()->withErrors(['email' => 'Email already exists'])->withInput();
+                return back()->withInput()->withErrors(['email' => 'A customer with this email already exists.']);
             }
 
-            // Create customer data
+            // Prepare customer data
             $customerData = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'company' => $request->company,
-                'address' => $request->address,
-                'status' => $request->status,
-                'notes' => $request->notes,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'company' => $validated['company'],
+                'address' => $validated['address'],
+                'status' => $validated['status'],
+                'notes' => $validated['notes'],
                 'created_at' => now()->toISOString(),
-                'updated_at' => now()->toISOString(),
+                'updated_at' => now()->toISOString()
             ];
 
+            // Create customer in Supabase
             $result = $this->supabase->insert('customers', $customerData);
 
             if (!$result || (is_array($result) && isset($result['error']))) {
-                throw new \Exception('Failed to create customer in database');
+                $errorMessage = is_array($result) && isset($result['error']) ? $result['error']['message'] : 'Failed to create customer';
+                return back()->withInput()->withErrors(['email' => $errorMessage]);
             }
 
             // Send welcome email
-            $this->sendWelcomeEmail($request->email, $request->name);
+            $this->sendWelcomeEmail($validated['email'], $validated['name']);
 
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Customer created successfully',
-                    'customer' => $result
-                ], 201);
-            }
+            return redirect()->route('customers.index')
+                ->with('success', 'Customer created successfully and welcome email sent!');
 
-            return redirect()->route('customers.index')->with('success', 'Customer created successfully!');
-            
         } catch (\Exception $e) {
             \Log::error('Customer creation error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Failed to create customer'], 500);
-            }
-            
-            return back()->withErrors(['error' => 'Failed to create customer: ' . $e->getMessage()])->withInput();
+            return back()->withInput()->withErrors(['email' => 'Failed to create customer: ' . $e->getMessage()]);
         }
     }
 
     /**
      * Display the specified customer
      */
-    public function show($id, Request $request)
+    public function show($id)
     {
         try {
             $customers = $this->supabase->query('customers', '*', ['id' => $id]);
             
             if (empty($customers) || !is_array($customers) || count($customers) === 0) {
-                if ($request->expectsJson()) {
-                    return response()->json(['error' => 'Customer not found'], 404);
-                }
-                return redirect()->route('customers.index')->with('error', 'Customer not found');
+                return redirect()->route('customers.index')
+                    ->with('error', 'Customer not found.');
             }
 
             $customer = $customers[0];
 
-            // Get related proposals and invoices
-            $proposals = $this->supabase->query('proposals', '*', ['customer_id' => $id]) ?: [];
-            $invoices = $this->supabase->query('invoices', '*', ['customer_id' => $id]) ?: [];
+            // Get related proposals and invoices (when those features are implemented)
+            $proposals = []; // $this->supabase->query('proposals', '*', ['customer_id' => $id]);
+            $invoices = [];  // $this->supabase->query('invoices', '*', ['customer_id' => $id]);
 
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'customer' => $customer,
-                    'proposals' => $proposals,
-                    'invoices' => $invoices
-                ]);
-            }
+            return view('customers.show', [
+                'customer' => $customer,
+                'proposals' => $proposals,
+                'invoices' => $invoices
+            ]);
 
-            return view('customers.show', compact('customer', 'proposals', 'invoices'));
-            
         } catch (\Exception $e) {
             \Log::error('Customer show error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Failed to load customer'], 500);
-            }
-            
-            return redirect()->route('customers.index')->with('error', 'Failed to load customer');
+            return redirect()->route('customers.index')
+                ->with('error', 'Failed to load customer: ' . $e->getMessage());
         }
     }
 
@@ -234,15 +187,17 @@ class SupabaseCustomerController extends Controller
             $customers = $this->supabase->query('customers', '*', ['id' => $id]);
             
             if (empty($customers) || !is_array($customers) || count($customers) === 0) {
-                return redirect()->route('customers.index')->with('error', 'Customer not found');
+                return redirect()->route('customers.index')
+                    ->with('error', 'Customer not found.');
             }
 
             $customer = $customers[0];
-            return view('customers.edit', compact('customer'));
-            
+            return view('customers.edit', ['customer' => $customer]);
+
         } catch (\Exception $e) {
             \Log::error('Customer edit error: ' . $e->getMessage());
-            return redirect()->route('customers.index')->with('error', 'Failed to load customer');
+            return redirect()->route('customers.index')
+                ->with('error', 'Failed to load customer: ' . $e->getMessage());
         }
     }
 
@@ -251,239 +206,114 @@ class SupabaseCustomerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            return back()->withErrors($validator)->withInput();
-        }
-
         try {
-            // Check if customer exists
-            $customers = $this->supabase->query('customers', '*', ['id' => $id]);
-            if (empty($customers) || !is_array($customers) || count($customers) === 0) {
-                if ($request->expectsJson()) {
-                    return response()->json(['error' => 'Customer not found'], 404);
-                }
-                return redirect()->route('customers.index')->with('error', 'Customer not found');
-            }
-
-            // Check if email is taken by another customer
-            $existingCustomers = $this->supabase->query('customers', '*', ['email' => $request->email]);
+            // Check if email already exists for other customers
+            $existingCustomers = $this->supabase->query('customers', '*', ['email' => $validated['email']]);
             if (!empty($existingCustomers) && is_array($existingCustomers)) {
                 foreach ($existingCustomers as $existing) {
                     if ($existing['id'] != $id) {
-                        if ($request->expectsJson()) {
-                            return response()->json(['error' => 'Email already exists'], 422);
-                        }
-                        return back()->withErrors(['email' => 'Email already exists'])->withInput();
+                        return back()->withInput()->withErrors(['email' => 'A customer with this email already exists.']);
                     }
                 }
             }
 
             // Update customer data
             $updateData = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-                'company' => $request->company,
-                'address' => $request->address,
-                'status' => $request->status,
-                'notes' => $request->notes,
-                'updated_at' => now()->toISOString(),
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'company' => $validated['company'],
+                'address' => $validated['address'],
+                'status' => $validated['status'],
+                'notes' => $validated['notes'],
+                'updated_at' => now()->toISOString()
             ];
 
             $result = $this->supabase->update('customers', $id, $updateData);
 
             if (!$result) {
-                throw new \Exception('Failed to update customer in database');
+                return back()->withInput()->withErrors(['email' => 'Failed to update customer.']);
             }
 
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Customer updated successfully',
-                    'customer' => array_merge($customers[0], $updateData)
-                ]);
-            }
+            return redirect()->route('customers.index')
+                ->with('success', 'Customer updated successfully!');
 
-            return redirect()->route('customers.index')->with('success', 'Customer updated successfully!');
-            
         } catch (\Exception $e) {
             \Log::error('Customer update error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Failed to update customer'], 500);
-            }
-            
-            return back()->withErrors(['error' => 'Failed to update customer: ' . $e->getMessage()])->withInput();
+            return back()->withInput()->withErrors(['email' => 'Failed to update customer: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Remove the specified customer
+     * Remove the specified customer (soft delete)
      */
-    public function destroy($id, Request $request)
+    public function destroy($id)
     {
         try {
-            // Check if customer exists
-            $customers = $this->supabase->query('customers', '*', ['id' => $id]);
-            if (empty($customers) || !is_array($customers) || count($customers) === 0) {
-                if ($request->expectsJson()) {
-                    return response()->json(['error' => 'Customer not found'], 404);
-                }
-                return redirect()->route('customers.index')->with('error', 'Customer not found');
-            }
-
-            // Soft delete by setting deleted_at
+            // Soft delete by setting deleted_at timestamp
             $result = $this->supabase->update('customers', $id, [
                 'deleted_at' => now()->toISOString(),
-                'updated_at' => now()->toISOString(),
+                'status' => 'inactive'
             ]);
 
             if (!$result) {
-                throw new \Exception('Failed to delete customer');
+                return redirect()->route('customers.index')
+                    ->with('error', 'Failed to delete customer.');
             }
 
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'Customer deleted successfully']);
-            }
+            return redirect()->route('customers.index')
+                ->with('success', 'Customer deleted successfully!');
 
-            return redirect()->route('customers.index')->with('success', 'Customer deleted successfully!');
-            
         } catch (\Exception $e) {
-            \Log::error('Customer deletion error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Failed to delete customer'], 500);
-            }
-            
-            return redirect()->route('customers.index')->with('error', 'Failed to delete customer');
+            \Log::error('Customer delete error: ' . $e->getMessage());
+            return redirect()->route('customers.index')
+                ->with('error', 'Failed to delete customer: ' . $e->getMessage());
         }
     }
 
     /**
-     * Toggle customer status
+     * Toggle customer status (active/inactive)
      */
-    public function toggleStatus($id, Request $request)
+    public function toggleStatus($id)
     {
         try {
             $customers = $this->supabase->query('customers', '*', ['id' => $id]);
+            
             if (empty($customers) || !is_array($customers) || count($customers) === 0) {
-                if ($request->expectsJson()) {
-                    return response()->json(['error' => 'Customer not found'], 404);
-                }
-                return redirect()->route('customers.index')->with('error', 'Customer not found');
+                return response()->json(['error' => 'Customer not found'], 404);
             }
 
             $customer = $customers[0];
-            $newStatus = $customer['status'] === 'active' ? 'inactive' : 'active';
+            $newStatus = ($customer['status'] ?? 'active') === 'active' ? 'inactive' : 'active';
 
             $result = $this->supabase->update('customers', $id, [
                 'status' => $newStatus,
-                'updated_at' => now()->toISOString(),
+                'updated_at' => now()->toISOString()
             ]);
 
             if (!$result) {
-                throw new \Exception('Failed to update customer status');
-            }
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'Customer status updated successfully',
-                    'status' => $newStatus
-                ]);
-            }
-
-            return redirect()->route('customers.index')->with('success', 'Customer status updated successfully!');
-            
-        } catch (\Exception $e) {
-            \Log::error('Customer status toggle error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
                 return response()->json(['error' => 'Failed to update status'], 500);
             }
-            
-            return redirect()->route('customers.index')->with('error', 'Failed to update customer status');
-        }
-    }
 
-    /**
-     * Bulk actions for customers
-     */
-    public function bulkAction(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'action' => 'required|in:activate,deactivate,delete',
-            'customer_ids' => 'required|array|min:1',
-            'customer_ids.*' => 'integer'
-        ]);
+            return response()->json([
+                'success' => true,
+                'status' => $newStatus,
+                'message' => "Customer status changed to {$newStatus}"
+            ]);
 
-        if ($validator->fails()) {
-            if ($request->expectsJson()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
-            return back()->withErrors($validator);
-        }
-
-        try {
-            $action = $request->action;
-            $customerIds = $request->customer_ids;
-            $successCount = 0;
-
-            foreach ($customerIds as $id) {
-                try {
-                    switch ($action) {
-                        case 'activate':
-                            $this->supabase->update('customers', $id, [
-                                'status' => 'active',
-                                'updated_at' => now()->toISOString()
-                            ]);
-                            break;
-                        case 'deactivate':
-                            $this->supabase->update('customers', $id, [
-                                'status' => 'inactive',
-                                'updated_at' => now()->toISOString()
-                            ]);
-                            break;
-                        case 'delete':
-                            $this->supabase->update('customers', $id, [
-                                'deleted_at' => now()->toISOString(),
-                                'updated_at' => now()->toISOString()
-                            ]);
-                            break;
-                    }
-                    $successCount++;
-                } catch (\Exception $e) {
-                    \Log::error("Bulk action failed for customer {$id}: " . $e->getMessage());
-                }
-            }
-
-            $message = "Bulk action completed successfully for {$successCount} customers.";
-
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $message, 'affected_count' => $successCount]);
-            }
-
-            return redirect()->route('customers.index')->with('success', $message);
-            
         } catch (\Exception $e) {
-            \Log::error('Bulk action error: ' . $e->getMessage());
-            
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Bulk action failed'], 500);
-            }
-            
-            return redirect()->route('customers.index')->with('error', 'Bulk action failed');
+            \Log::error('Customer toggle status error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to toggle status: ' . $e->getMessage()], 500);
         }
     }
 
@@ -499,39 +329,20 @@ class SupabaseCustomerController extends Controller
                 $customers = [];
             }
 
-            // Apply filters if provided
-            $search = $request->get('search');
-            if ($search) {
-                $customers = array_filter($customers, function ($customer) use ($search) {
-                    return stripos($customer['name'], $search) !== false ||
-                           stripos($customer['email'], $search) !== false ||
-                           stripos($customer['company'], $search) !== false;
+            // Apply same filters as index
+            if ($request->filled('search')) {
+                $search = strtolower($request->search);
+                $customers = array_filter($customers, function($customer) use ($search) {
+                    return str_contains(strtolower($customer['name'] ?? ''), $search) ||
+                           str_contains(strtolower($customer['email'] ?? ''), $search) ||
+                           str_contains(strtolower($customer['company'] ?? ''), $search);
                 });
             }
 
-            $status = $request->get('status');
-            if ($status && $status !== 'all') {
-                $customers = array_filter($customers, function ($customer) use ($status) {
-                    return $customer['status'] === $status;
+            if ($request->filled('status')) {
+                $customers = array_filter($customers, function($customer) use ($request) {
+                    return ($customer['status'] ?? 'active') === $request->status;
                 });
-            }
-
-            // Prepare CSV data
-            $csvData = [];
-            $csvData[] = ['ID', 'Name', 'Email', 'Phone', 'Company', 'Status', 'Address', 'Notes', 'Created Date'];
-
-            foreach ($customers as $customer) {
-                $csvData[] = [
-                    $customer['id'],
-                    $customer['name'],
-                    $customer['email'],
-                    $customer['phone'] ?? '',
-                    $customer['company'] ?? '',
-                    $customer['status'],
-                    $customer['address'] ?? '',
-                    $customer['notes'] ?? '',
-                    $customer['created_at']
-                ];
             }
 
             $filename = 'customers_export_' . date('Y-m-d_H-i-s') . '.csv';
@@ -541,22 +352,39 @@ class SupabaseCustomerController extends Controller
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             ];
 
-            return response()->stream(function () use ($csvData) {
+            return response()->stream(function () use ($customers) {
                 $file = fopen('php://output', 'w');
-                foreach ($csvData as $row) {
-                    fputcsv($file, $row);
+                
+                // CSV Headers
+                fputcsv($file, ['ID', 'Name', 'Email', 'Phone', 'Company', 'Status', 'Address', 'Notes', 'Created At']);
+                
+                // CSV Data
+                foreach ($customers as $customer) {
+                    fputcsv($file, [
+                        $customer['id'] ?? '',
+                        $customer['name'] ?? '',
+                        $customer['email'] ?? '',
+                        $customer['phone'] ?? '',
+                        $customer['company'] ?? '',
+                        $customer['status'] ?? 'active',
+                        $customer['address'] ?? '',
+                        $customer['notes'] ?? '',
+                        $customer['created_at'] ?? '',
+                    ]);
                 }
+                
                 fclose($file);
             }, 200, $headers);
-            
+
         } catch (\Exception $e) {
             \Log::error('Customer export error: ' . $e->getMessage());
-            return redirect()->route('customers.index')->with('error', 'Failed to export customers');
+            return redirect()->route('customers.index')
+                ->with('error', 'Failed to export customers: ' . $e->getMessage());
         }
     }
 
     /**
-     * Send welcome email to customer
+     * Send welcome email to new customer
      */
     private function sendWelcomeEmail($email, $name)
     {
@@ -569,16 +397,21 @@ class SupabaseCustomerController extends Controller
                                 <h2 style='color: #4f46e5; text-align: center;'>Welcome to Connectly!</h2>
                                 <div style='background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;'>
                                     <p style='font-size: 18px; color: #1f2937;'>Hi {$name},</p>
-                                    <p style='color: #64748b;'>Welcome to Connectly - your modern CRM solution!</p>
-                                    <p style='color: #64748b;'>You've been added to our customer database. We look forward to working with you!</p>
+                                    <p style='color: #64748b;'>Welcome to our CRM system! We're excited to work with you.</p>
+                                    <p style='color: #64748b;'>Our team will be in touch soon to discuss how we can help you achieve your goals.</p>
                                 </div>
-                                <p style='color: #64748b; text-align: center; font-size: 14px;'>Thank you for choosing Connectly!</p>
+                                <div style='text-align: center; margin: 30px 0;'>
+                                    <p style='color: #64748b;'>If you have any questions, feel free to reach out to us!</p>
+                                </div>
+                                <p style='color: #64748b; text-align: center; font-size: 14px;'>
+                                    Best regards,<br>The Connectly Team
+                                </p>
                             </div>
                         ");
             });
         } catch (\Exception $e) {
             \Log::error('Welcome email failed: ' . $e->getMessage());
-            // Don't throw - customer creation should still succeed
+            // Don't throw error - customer creation should still succeed
         }
     }
 } 
