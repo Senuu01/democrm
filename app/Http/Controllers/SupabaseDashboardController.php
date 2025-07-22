@@ -61,6 +61,12 @@ class SupabaseDashboardController extends Controller
             $transactions = $this->supabase->query('transactions', '*', ['user_id' => $userId]);
             $transactions = is_array($transactions) ? $transactions : [];
 
+            // Additional safety: ensure each record is an array to prevent array_merge errors
+            $customers = array_filter($customers, 'is_array');
+            $proposals = array_filter($proposals, 'is_array');
+            $invoices = array_filter($invoices, 'is_array');
+            $transactions = array_filter($transactions, 'is_array');
+
             // Calculate key metrics
             try {
                 $metrics = $this->calculateMetrics($customers, $proposals, $invoices, $transactions);
@@ -89,6 +95,20 @@ class SupabaseDashboardController extends Controller
             $metrics = is_array($metrics) ? $metrics : [];
             $chartData = is_array($chartData) ? $chartData : [];
             $recentData = is_array($recentData) ? $recentData : [];
+
+            // Additional logging for debugging
+            if (!is_array($metrics) || !is_array($chartData) || !is_array($recentData)) {
+                \Log::error('Non-array data detected before merge', [
+                    'metrics_type' => gettype($metrics),
+                    'chartData_type' => gettype($chartData),
+                    'recentData_type' => gettype($recentData)
+                ]);
+                
+                // Force to arrays as safety net
+                $metrics = (array) $metrics;
+                $chartData = (array) $chartData;
+                $recentData = (array) $recentData;
+            }
 
             return view('dashboard-professional', array_merge($metrics, $chartData, $recentData, [
                 'user' => $user,
@@ -241,6 +261,11 @@ class SupabaseDashboardController extends Controller
         // Get top customers by revenue
         $customerRevenue = [];
         foreach ($customers as $customer) {
+            // Ensure customer is an array before processing
+            if (!is_array($customer)) {
+                continue;
+            }
+            
             $customerTransactions = array_filter($transactions, fn($t) => 
                 ($t['customer_id'] ?? 0) == ($customer['id'] ?? 0) && 
                 ($t['status'] ?? 'pending') === 'completed'
