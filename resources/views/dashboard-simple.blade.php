@@ -123,6 +123,23 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-file-alt text-2xl text-blue-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Proposal Management</h3>
+                                <p class="text-sm text-gray-600">Create and track business proposals</p>
+                                <a href="{{ route('proposals.index') }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">
+                                    Manage Proposals →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- User Information -->

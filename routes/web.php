@@ -114,9 +114,18 @@ Route::middleware(['simple.auth'])->group(function () {
     Route::post('/customers/{id}/toggle-status', [App\Http\Controllers\SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
     Route::get('/customers-export', [App\Http\Controllers\SupabaseCustomerController::class, 'export'])->name('customers.export');
     
-    // PROPOSALS (Legacy routes - will be updated later)
-    Route::get('/proposals', [SupabaseController::class, 'proposals'])->name('proposals.index');
-    Route::post('/proposals', [SupabaseController::class, 'storeProposal'])->name('proposals.store');
+    // SUPABASE-BASED PROPOSAL MANAGEMENT (Full CRUD)
+    Route::get('/proposals', [App\Http\Controllers\SupabaseProposalController::class, 'index'])->name('proposals.index');
+    Route::get('/proposals/create', [App\Http\Controllers\SupabaseProposalController::class, 'create'])->name('proposals.create');
+    Route::post('/proposals', [App\Http\Controllers\SupabaseProposalController::class, 'store'])->name('proposals.store');
+    Route::get('/proposals/{id}', [App\Http\Controllers\SupabaseProposalController::class, 'show'])->name('proposals.show');
+    Route::get('/proposals/{id}/edit', [App\Http\Controllers\SupabaseProposalController::class, 'edit'])->name('proposals.edit');
+    Route::put('/proposals/{id}', [App\Http\Controllers\SupabaseProposalController::class, 'update'])->name('proposals.update');
+    Route::delete('/proposals/{id}', [App\Http\Controllers\SupabaseProposalController::class, 'destroy'])->name('proposals.destroy');
+    Route::post('/proposals/{id}/status', [App\Http\Controllers\SupabaseProposalController::class, 'updateStatus'])->name('proposals.updateStatus');
+    Route::get('/proposals/{id}/pdf', [App\Http\Controllers\SupabaseProposalController::class, 'generatePdf'])->name('proposals.pdf');
+    Route::post('/proposals/{id}/send-email', [App\Http\Controllers\SupabaseProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
+    Route::post('/proposals/{id}/convert-to-invoice', [App\Http\Controllers\SupabaseProposalController::class, 'convertToInvoice'])->name('proposals.convertToInvoice');
 });
 
 // Stripe webhook (no auth required)
