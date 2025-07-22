@@ -4,10 +4,7 @@ cmds = [
     "npm install",
     "npm run build",
     "chmod -R 775 storage",
-    "chmod -R 775 bootstrap/cache",
-    "php artisan config:cache",
-    "php artisan route:cache", 
-    "php artisan view:cache"
+    "chmod -R 775 bootstrap/cache"
 ]
 
 [phases.start]

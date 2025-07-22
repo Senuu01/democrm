@@ -10,11 +10,25 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomLoginController;
 use App\Http\Controllers\SupabaseController;
 
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now(),
+        'php_version' => PHP_VERSION,
+        'laravel_version' => app()->version()
+    ]);
+});
+
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect('/dashboard');
+    try {
+        return view('welcome');
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
     }
-    return view('welcome');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
