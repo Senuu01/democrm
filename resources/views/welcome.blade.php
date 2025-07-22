@@ -4,11 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Connectly - Modern CRM Solution</title>
-            @if(file_exists(public_path('build/manifest.json')))
-                @vite(['resources/css/app.css', 'resources/js/app.js'])
-            @else
-                <script src="https://cdn.tailwindcss.com"></script>
-            @endif
+            <script src="https://cdn.tailwindcss.com"></script>
             <style>
         body {
             overflow-x: hidden;
