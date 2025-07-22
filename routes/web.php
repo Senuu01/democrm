@@ -84,20 +84,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
-// Simple Email Authentication (No Database) - Override Laravel Breeze
-Route::get('/auth/login', [App\Http\Controllers\SimpleAuthController::class, 'showLogin'])->name('auth.login');
-Route::post('/auth/login', [App\Http\Controllers\SimpleAuthController::class, 'sendLoginCode'])->name('auth.send-code');
-Route::get('/auth/verify', [App\Http\Controllers\SimpleAuthController::class, 'showVerifyCode'])->name('auth.verify');
-Route::post('/auth/verify', [App\Http\Controllers\SimpleAuthController::class, 'verifyCode'])->name('auth.verify.post');
-Route::get('/auth/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('auth.register');
-Route::post('/auth/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('auth.register.post');
-Route::post('/auth/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
-Route::get('/auth/dashboard', [App\Http\Controllers\SimpleAuthController::class, 'dashboard'])->name('auth.dashboard');
-
-// Redirects to maintain compatibility
-Route::get('/login', function() { return redirect('/auth/login'); });
-Route::get('/register', function() { return redirect('/auth/register'); });
-Route::get('/dashboard', function() { return redirect('/auth/dashboard'); });
+// Simple Email Authentication (No Database) - Direct routes
+Route::get('/login', [App\Http\Controllers\SimpleAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [App\Http\Controllers\SimpleAuthController::class, 'sendLoginCode'])->name('auth.send-code');
+Route::get('/verify', [App\Http\Controllers\SimpleAuthController::class, 'showVerifyCode'])->name('auth.verify');
+Route::post('/verify', [App\Http\Controllers\SimpleAuthController::class, 'verifyCode'])->name('auth.verify');
+Route::get('/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register');
+Route::post('/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
+Route::get('/dashboard', [App\Http\Controllers\SimpleAuthController::class, 'dashboard'])->name('dashboard');
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
