@@ -21,6 +21,11 @@ class SupabaseDashboardController extends Controller
     public function index()
     {
         try {
+            // Double-check authentication
+            if (!session('authenticated')) {
+                return redirect()->route('login')->with('error', 'Please login to access dashboard.');
+            }
+
             // Get user from session
             $userEmail = session('user_data.email') ?? session('user_email');
             
@@ -36,6 +41,11 @@ class SupabaseDashboardController extends Controller
             }
 
             $user = $users[0];
+            if (!isset($user['id'])) {
+                \Log::error('User data missing ID', ['user' => $user, 'email' => $userEmail]);
+                return redirect()->route('login')->with('error', 'Invalid user data.');
+            }
+            
             $userId = $user['id'];
 
             // Get all data for this user
@@ -87,12 +97,22 @@ class SupabaseDashboardController extends Controller
             ]));
 
         } catch (\Exception $e) {
-            \Log::error('Dashboard error: ' . $e->getMessage());
+            \Log::error('Dashboard error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'user_email' => session('user_email'),
+                'user_data' => session('user_data'),
+                'authenticated' => session('authenticated')
+            ]);
             
-            // Fallback to simple dashboard
+            // If not authenticated, redirect to login
+            if (!session('authenticated')) {
+                return redirect()->route('login')->with('error', 'Please login to access dashboard.');
+            }
+            
+            // Fallback to simple dashboard with safe data
             return view('dashboard-simple', [
-                'message' => 'Dashboard temporarily simplified due to: ' . $e->getMessage(),
-                'user' => session('user_data', ['name' => 'User', 'email' => session('user_email')])
+                'message' => 'Dashboard temporarily simplified due to a technical issue.',
+                'user' => session('user_data', ['name' => 'User', 'email' => session('user_email', 'user@example.com')])
             ]);
         }
     }
