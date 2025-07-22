@@ -102,7 +102,6 @@ Route::post('/verify', [App\Http\Controllers\SimpleAuthController::class, 'verif
 Route::get('/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
-Route::get('/dashboard', [App\Http\Controllers\SimpleAuthController::class, 'dashboard'])->name('dashboard');
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
