@@ -21,6 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -44,5 +45,53 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user has admin role
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user has staff role
+     */
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    /**
+     * Check if user can access analytics
+     */
+    public function canAccessAnalytics(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Check if user can manage users
+     */
+    public function canManageUsers(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Check if user can manage all resources
+     */
+    public function canManageAll(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * Get activities logged by this user
+     */
+    public function activities()
+    {
+        return $this->hasMany(Activity::class);
     }
 }

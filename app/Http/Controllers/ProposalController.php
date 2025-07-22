@@ -7,6 +7,7 @@ use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ProposalCreated;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProposalController extends Controller
 {
@@ -125,12 +126,48 @@ class ProposalController extends Controller
     }
 
     /**
-     * Send proposal email to customer
+     * Generate PDF for proposal
+     */
+    public function generatePdf(Proposal $proposal)
+    {
+        $pdf = Pdf::loadView('proposals.pdf', compact('proposal'));
+        
+        $filename = 'proposal_' . $proposal->id . '_' . date('Y-m-d') . '.pdf';
+        
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Send proposal email to customer with PDF attachment
      */
     public function sendEmail(Proposal $proposal)
     {
         try {
-            Mail::to($proposal->customer->email)->send(new ProposalCreated($proposal));
+            // Generate PDF
+            $pdf = Pdf::loadView('proposals.pdf', compact('proposal'));
+            $filename = 'proposal_' . $proposal->id . '_' . date('Y-m-d') . '.pdf';
+            
+            // Send email with PDF attachment
+            Mail::send([], [], function ($message) use ($proposal, $pdf, $filename) {
+                $message->to($proposal->customer->email)
+                        ->subject("Proposal #{$proposal->id} - {$proposal->title}")
+                        ->html("
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                <h2 style='color: #4f46e5; text-align: center;'>New Proposal from Connectly</h2>
+                                <div style='background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                                    <p><strong>Proposal:</strong> {$proposal->title}</p>
+                                    <p><strong>Amount:</strong> $" . number_format($proposal->amount, 2) . "</p>
+                                    <p><strong>Valid Until:</strong> " . $proposal->valid_until->format('M d, Y') . "</p>
+                                </div>
+                                <p>Hi {$proposal->customer->name},</p>
+                                <p>Please find your proposal attached as a PDF. We look forward to working with you!</p>
+                                <p>Best regards,<br>The Connectly Team</p>
+                            </div>
+                        ")
+                        ->attachData($pdf->output(), $filename, [
+                            'mime' => 'application/pdf',
+                        ]);
+            });
             
             // Update status to 'sent' if it was 'draft'
             if ($proposal->status === 'draft') {
@@ -143,5 +180,45 @@ class ProposalController extends Controller
             return redirect()->back()
                 ->with('error', 'Failed to send proposal email: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Duplicate a proposal
+     */
+    public function duplicate(Proposal $proposal)
+    {
+        $newProposal = $proposal->replicate();
+        $newProposal->title = $proposal->title . ' (Copy)';
+        $newProposal->status = 'draft';
+        $newProposal->valid_until = now()->addDays(30);
+        $newProposal->save();
+
+        return redirect()->route('proposals.edit', $newProposal)
+            ->with('success', 'Proposal duplicated successfully.');
+    }
+
+    /**
+     * Convert proposal to invoice
+     */
+    public function convertToInvoice(Proposal $proposal)
+    {
+        // Check if proposal is accepted
+        if ($proposal->status !== 'accepted') {
+            return redirect()->back()
+                ->with('error', 'Only accepted proposals can be converted to invoices.');
+        }
+
+        // Create invoice from proposal
+        $invoice = \App\Models\Invoice::create([
+            'customer_id' => $proposal->customer_id,
+            'proposal_id' => $proposal->id,
+            'amount' => $proposal->amount,
+            'description' => $proposal->description,
+            'due_date' => now()->addDays(30),
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('invoices.show', $invoice)
+            ->with('success', 'Invoice created from proposal successfully.');
     }
 }

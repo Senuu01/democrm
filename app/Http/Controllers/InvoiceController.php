@@ -12,6 +12,7 @@ use App\Mail\InvoicePaymentMail;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Checkout\Session;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -112,17 +113,61 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Send invoice payment email to customer
+     * Generate PDF for invoice
+     */
+    public function generatePdf(Invoice $invoice)
+    {
+        $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+        
+        $filename = 'invoice_' . $invoice->invoice_number . '_' . date('Y-m-d') . '.pdf';
+        
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Send invoice payment email to customer with PDF attachment
      */
     public function send(Invoice $invoice)
     {
-        // Send payment email to customer
-        Mail::to($invoice->customer->email)->send(new InvoicePaymentMail($invoice));
-        
-        // Update invoice status to sent
-        $invoice->update(['status' => 'sent']);
-        
-        return redirect()->route('invoices.show', $invoice)->with('success', 'Payment email sent successfully!');
+        try {
+            // Generate PDF
+            $pdf = Pdf::loadView('invoices.pdf', compact('invoice'));
+            $filename = 'invoice_' . $invoice->invoice_number . '.pdf';
+            
+            // Send email with PDF attachment and payment link
+            Mail::send([], [], function ($message) use ($invoice, $pdf, $filename) {
+                $paymentUrl = route('invoices.payment', $invoice);
+                
+                $message->to($invoice->customer->email)
+                        ->subject("Invoice #{$invoice->invoice_number} - Payment Due")
+                        ->html("
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                <h2 style='color: #4f46e5; text-align: center;'>Invoice from Connectly</h2>
+                                <div style='background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                                    <p><strong>Invoice Number:</strong> {$invoice->invoice_number}</p>
+                                    <p><strong>Amount Due:</strong> $" . number_format($invoice->total_amount, 2) . "</p>
+                                    <p><strong>Due Date:</strong> " . $invoice->due_date->format('M d, Y') . "</p>
+                                </div>
+                                <p>Hi {$invoice->customer->name},</p>
+                                <p>Please find your invoice attached as a PDF. You can pay securely online using the button below.</p>
+                                <div style='text-align: center; margin: 30px 0;'>
+                                    <a href='{$paymentUrl}' style='background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;'>Pay Now - $" . number_format($invoice->total_amount, 2) . "</a>
+                                </div>
+                                <p>Best regards,<br>The Connectly Team</p>
+                            </div>
+                        ")
+                        ->attachData($pdf->output(), $filename, [
+                            'mime' => 'application/pdf',
+                        ]);
+            });
+            
+            // Update invoice status to sent
+            $invoice->update(['status' => 'sent']);
+            
+            return redirect()->route('invoices.show', $invoice)->with('success', 'Invoice email sent successfully to ' . $invoice->customer->email);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to send invoice email: ' . $e->getMessage());
+        }
     }
 
     /**

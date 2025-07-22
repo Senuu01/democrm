@@ -58,8 +58,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Resource routes
     Route::resource('customers', CustomerController::class);
+    Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
+    Route::post('/customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+    Route::get('/customers-export', [CustomerController::class, 'export'])->name('customers.export');
+    
     Route::resource('proposals', ProposalController::class);
+    Route::get('/proposals/{proposal}/pdf', [ProposalController::class, 'generatePdf'])->name('proposals.pdf');
+    Route::post('/proposals/{proposal}/duplicate', [ProposalController::class, 'duplicate'])->name('proposals.duplicate');
+    Route::post('/proposals/{proposal}/convert-to-invoice', [ProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
+    
     Route::resource('invoices', InvoiceController::class);
+    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+    
     Route::resource('transactions', TransactionController::class)->only(['index', 'show']);
     Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
     Route::patch('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.updateStatus');
