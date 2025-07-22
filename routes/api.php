@@ -65,22 +65,26 @@ Route::middleware('api.auth')->group(function () {
         Route::patch('/{id}/status', [InvoiceController::class, 'updateStatus'])->name('status');
         Route::post('/{id}/payment', [InvoiceController::class, 'createPayment'])->name('payment');
     });
-    
-    // Health Check
-    Route::get('/health', function () {
-        return response()->json([
-            'success' => true,
-            'message' => 'API is healthy',
-            'timestamp' => now()->toISOString(),
-            'version' => '1.0.0',
-            'environment' => config('app.env'),
-            'database' => 'Supabase',
-            'services' => [
-                'supabase' => config('services.supabase.url') ? 'connected' : 'disconnected',
-                'mail' => config('mail.mailers.smtp.host') ? 'configured' : 'not configured'
-            ]
-        ]);
-    })->name('api.health');
+});
+
+// Public Health Check
+Route::get('/health', function () {
+    return response()->json([
+        'success' => true,
+        'message' => 'API is healthy',
+        'timestamp' => now()->toISOString(),
+        'version' => '1.0.0',
+        'environment' => config('app.env'),
+        'database' => 'Supabase',
+        'services' => [
+            'supabase' => config('services.supabase.url') ? 'connected' : 'disconnected',
+            'mail' => config('mail.mailers.smtp.host') ? 'configured' : 'not configured'
+        ]
+    ]);
+})->name('api.health');
+
+// Protected user info endpoint
+Route::middleware('api.auth')->group(function () {
     
     // User Info
     Route::get('/user', function (Request $request) {

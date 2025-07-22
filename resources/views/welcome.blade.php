@@ -46,10 +46,10 @@
                     <a href="#pricing" class="text-gray-700 hover:text-blue-600 transition duration-300">Pricing</a>
                     <a href="#api" class="text-gray-700 hover:text-blue-600 transition duration-300">API</a>
                     <a href="#contact" class="text-gray-700 hover:text-blue-600 transition duration-300">Contact</a>
-                    <a href="{{ route('auth.login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition duration-300">
+                    <a href="{{ route('login') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition duration-300">
                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                     </a>
-                    <a href="{{ route('auth.register') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition duration-300">
+                    <a href="{{ route('auth.email-register') }}" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition duration-300">
                         <i class="fas fa-user-plus mr-2"></i>Get Started
                     </a>
                 </div>
@@ -70,8 +70,8 @@
                 <a href="#pricing" class="block px-3 py-2 text-gray-700 hover:text-blue-600">Pricing</a>
                 <a href="#api" class="block px-3 py-2 text-gray-700 hover:text-blue-600">API</a>
                 <a href="#contact" class="block px-3 py-2 text-gray-700 hover:text-blue-600">Contact</a>
-                <a href="{{ route('auth.login') }}" class="block px-3 py-2 text-blue-600 font-medium">Login</a>
-                <a href="{{ route('auth.register') }}" class="block px-3 py-2 text-green-600 font-medium">Get Started</a>
+                <a href="{{ route('login') }}" class="block px-3 py-2 text-blue-600 font-medium">Login</a>
+                <a href="{{ route('auth.email-register') }}" class="block px-3 py-2 text-green-600 font-medium">Get Started</a>
             </div>
         </div>
     </nav>
@@ -89,10 +89,10 @@
                         Complete customer relationship management with proposals, invoicing, payments, and powerful analytics. Built for modern businesses.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="{{ route('auth.register') }}" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 text-center">
+                        <a href="{{ route('auth.email-register') }}" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 text-center">
                             <i class="fas fa-rocket mr-2"></i>Start Free Trial
                         </a>
-                        <a href="{{ route('auth.login') }}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 text-center backdrop-blur-sm">
+                        <a href="{{ route('login') }}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 text-center backdrop-blur-sm">
                             <i class="fas fa-sign-in-alt mr-2"></i>Login
                         </a>
                     </div>
@@ -335,10 +335,10 @@
                 Join thousands of businesses using Connectly CRM to manage customers, close deals, and grow revenue.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('auth.register') }}" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition duration-300">
+                <a href="{{ route('auth.email-register') }}" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition duration-300">
                     <i class="fas fa-rocket mr-2"></i>Start Your Free Trial
                 </a>
-                <a href="{{ route('auth.login') }}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 backdrop-blur-sm">
+                <a href="{{ route('login') }}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-8 py-4 rounded-lg font-semibold text-lg transition duration-300 backdrop-blur-sm">
                     <i class="fas fa-sign-in-alt mr-2"></i>Login to Account
                 </a>
             </div>
