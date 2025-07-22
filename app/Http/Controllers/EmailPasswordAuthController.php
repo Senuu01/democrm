@@ -79,7 +79,15 @@ class EmailPasswordAuthController extends Controller
             }
 
             // Send verification email
-            $this->sendVerificationEmail($email, $name, $verificationCode);
+            try {
+                $this->sendVerificationEmail($email, $name, $verificationCode);
+            } catch (\Exception $mailError) {
+                \Log::error('Verification email failed: ' . $mailError->getMessage());
+                // Still allow registration to succeed, but inform user about email issue
+                return redirect()->route('auth.verify-email-form')
+                    ->with('warning', 'Registration successful but failed to send verification email. Please try requesting a new code.')
+                    ->with('email', $email);
+            }
 
             return redirect()->route('auth.verify-email-form')
                 ->with('success', 'Registration successful! Please check your email for verification code.')
@@ -87,7 +95,7 @@ class EmailPasswordAuthController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Registration error: ' . $e->getMessage());
-            return back()->withInput()->withErrors(['email' => 'Registration failed. Please try again.']);
+            return back()->withInput()->withErrors(['email' => 'Registration failed. Please try again. Error: ' . $e->getMessage()]);
         }
     }
 
@@ -257,7 +265,12 @@ class EmailPasswordAuthController extends Controller
             }
 
             // Send reset email
-            $this->sendPasswordResetEmail($email, $userData['name'], $resetCode);
+            try {
+                $this->sendPasswordResetEmail($email, $userData['name'], $resetCode);
+            } catch (\Exception $mailError) {
+                \Log::error('Password reset email failed: ' . $mailError->getMessage());
+                return back()->withInput()->withErrors(['email' => 'Failed to send reset code. Email service error: ' . $mailError->getMessage()]);
+            }
 
             return redirect()->route('auth.reset-password-form')
                 ->with('success', 'Password reset code sent to your email!')
@@ -265,7 +278,7 @@ class EmailPasswordAuthController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Password reset error: ' . $e->getMessage());
-            return back()->withInput()->withErrors(['email' => 'Failed to send reset code. Please try again.']);
+            return back()->withInput()->withErrors(['email' => 'Failed to send reset code. Please try again. Error: ' . $e->getMessage()]);
         }
     }
 
@@ -346,6 +359,34 @@ class EmailPasswordAuthController extends Controller
         return redirect()->route('login')->with('success', 'Logged out successfully');
     }
 
+    // EMAIL TEST METHOD (for debugging)
+    public function testEmail(Request $request)
+    {
+        if (!$request->has('test_email')) {
+            return response()->json(['error' => 'test_email parameter required']);
+        }
+        
+        $testEmail = $request->input('test_email');
+        
+        try {
+            Mail::send([], [], function ($message) use ($testEmail) {
+                $message->to($testEmail)
+                        ->subject('Test Email - Connectly CRM')
+                        ->html("
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                <h2 style='color: #4f46e5; text-align: center;'>Test Email</h2>
+                                <p>This is a test email to verify your mail configuration is working.</p>
+                                <p>Time sent: " . now() . "</p>
+                            </div>
+                        ");
+            });
+            
+            return response()->json(['success' => 'Test email sent successfully to ' . $testEmail]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send test email: ' . $e->getMessage()]);
+        }
+    }
+
     // EMAIL HELPER METHODS
 
     private function sendVerificationEmail($email, $name, $code)
@@ -369,6 +410,7 @@ class EmailPasswordAuthController extends Controller
             });
         } catch (\Exception $e) {
             \Log::error('Verification email failed: ' . $e->getMessage());
+            throw $e; // Re-throw to let the caller handle it
         }
     }
 
@@ -393,6 +435,7 @@ class EmailPasswordAuthController extends Controller
             });
         } catch (\Exception $e) {
             \Log::error('Password reset email failed: ' . $e->getMessage());
+            throw $e; // Re-throw to let the caller handle it
         }
     }
 }

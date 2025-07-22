@@ -113,6 +113,9 @@ Route::post('/reset-password', [App\Http\Controllers\EmailPasswordAuthController
 
 Route::post('/logout', [App\Http\Controllers\EmailPasswordAuthController::class, 'logout'])->name('auth.logout');
 
+// Test email route (for debugging mail configuration)
+Route::get('/test-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'testEmail'])->name('test.email');
+
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
 // Route::post('/login', [CustomLoginController::class, 'login']);
