@@ -23,16 +23,16 @@ class UserSettingsController extends Controller
     public function index()
     {
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             if (!$userEmail) {
-                return redirect()->route('auth.login')->with('error', 'Please login to access settings.');
+                return redirect()->route('login')->with('error', 'Please login to access settings.');
             }
 
             // Get current user data
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users) || count($users) === 0) {
-                return redirect()->route('auth.login')->with('error', 'User not found.');
+                return redirect()->route('login')->with('error', 'User not found.');
             }
 
             $user = $users[0];
@@ -66,7 +66,7 @@ class UserSettingsController extends Controller
         ]);
 
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users)) {
@@ -121,7 +121,7 @@ class UserSettingsController extends Controller
         ]);
 
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users)) {
@@ -173,7 +173,7 @@ class UserSettingsController extends Controller
         ]);
 
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users)) {
@@ -233,7 +233,7 @@ class UserSettingsController extends Controller
         ]);
 
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users)) {
@@ -260,7 +260,7 @@ class UserSettingsController extends Controller
 
             // Clear session and redirect
             session()->flush();
-            return redirect()->route('auth.login')
+            return redirect()->route('login')
                 ->with('success', 'Your account has been successfully deleted.');
 
         } catch (\Exception $e) {
@@ -275,7 +275,7 @@ class UserSettingsController extends Controller
     public function exportData()
     {
         try {
-            $userEmail = session('user_data.email');
+            $userEmail = session('user_data.email') ?? session('user_email');
             $users = $this->supabase->query('auth_users', '*', ['email' => $userEmail]);
             
             if (empty($users) || !is_array($users)) {
@@ -288,10 +288,10 @@ class UserSettingsController extends Controller
             $userData = [
                 'profile' => $user,
                 'preferences' => $this->getUserPreferences($user['id']),
-                'customers' => $this->supabase->query('customers', '*') ?: [],
-                'proposals' => $this->supabase->query('proposals', '*') ?: [],
-                'invoices' => $this->supabase->query('invoices', '*') ?: [],
-                'transactions' => $this->supabase->query('transactions', '*') ?: [],
+                'customers' => $this->supabase->query('customers', '*', ['user_id' => $user['id']]) ?: [],
+                'proposals' => $this->supabase->query('proposals', '*', ['user_id' => $user['id']]) ?: [],
+                'invoices' => $this->supabase->query('invoices', '*', ['user_id' => $user['id']]) ?: [],
+                'transactions' => $this->supabase->query('transactions', '*', ['user_id' => $user['id']]) ?: [],
                 'export_date' => now()->toISOString()
             ];
 

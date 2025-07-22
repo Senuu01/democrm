@@ -56,33 +56,24 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['simple.auth'])->group(function () {
-    // TEMPORARY: Dashboard route disabled due to database connection issues
-    // Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', function () {
-        return view('dashboard-simple', [
-            'message' => 'Dashboard temporarily simplified while fixing database connections.',
-            'user' => session('user_data', ['name' => 'User', 'email' => session('user_email')])
-        ]);
-    })->name('dashboard');
+    // Professional Dashboard with Supabase Analytics
+    Route::get('/dashboard', [App\Http\Controllers\SupabaseDashboardController::class, 'index'])->name('dashboard');
 
-    // Profile routes - DISABLED (use database)
-    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Resource routes - DISABLED (use database)
-    // Route::resource('customers', CustomerController::class);
-    // Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
-    // Route::post('/customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
-    // Route::get('/customers-export', [CustomerController::class, 'export'])->name('customers.export');
+    // Supabase-based Customer Management
+    Route::resource('customers', App\Http\Controllers\SupabaseCustomerController::class);
+    Route::post('/customers/{customer}/toggle-status', [App\Http\Controllers\SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
+    Route::post('/customers/bulk-action', [App\Http\Controllers\SupabaseCustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+    Route::get('/customers-export', [App\Http\Controllers\SupabaseCustomerController::class, 'export'])->name('customers.export');
     
-    // Route::resource('proposals', ProposalController::class);
-    // Route::get('/proposals/{proposal}/pdf', [ProposalController::class, 'generatePdf'])->name('proposals.pdf');
-    // Route::post('/proposals/{proposal}/duplicate', [ProposalController::class, 'duplicate'])->name('proposals.duplicate');
-    // Route::post('/proposals/{proposal}/convert-to-invoice', [ProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
+    // Supabase-based Proposal Management
+    Route::resource('proposals', App\Http\Controllers\SupabaseProposalController::class);
+    Route::get('/proposals/{proposal}/pdf', [App\Http\Controllers\SupabaseProposalController::class, 'generatePdf'])->name('proposals.pdf');
+    Route::post('/proposals/{proposal}/duplicate', [App\Http\Controllers\SupabaseProposalController::class, 'duplicate'])->name('proposals.duplicate');
+    Route::post('/proposals/{proposal}/convert-to-invoice', [App\Http\Controllers\SupabaseProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
     
-    // Route::resource('invoices', InvoiceController::class);
-    // Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+    // Supabase-based Invoice Management
+    Route::resource('invoices', App\Http\Controllers\SupabaseInvoiceController::class);
+    Route::get('/invoices/{invoice}/pdf', [App\Http\Controllers\SupabaseInvoiceController::class, 'generatePdf'])->name('invoices.pdf');
     
     // Route::resource('transactions', TransactionController::class)->only(['index', 'show']);
     // Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
