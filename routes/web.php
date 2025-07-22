@@ -67,15 +67,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
-// Email-based Authentication with Resend + Supabase
-Route::get('/login', [App\Http\Controllers\EmailAuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [App\Http\Controllers\EmailAuthController::class, 'sendLoginCode'])->name('auth.send-code');
-Route::get('/verify', [App\Http\Controllers\EmailAuthController::class, 'showVerifyCode'])->name('auth.verify-code');
-Route::post('/verify', [App\Http\Controllers\EmailAuthController::class, 'verifyCode'])->name('auth.verify-code.post');
-Route::get('/register', [App\Http\Controllers\EmailAuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [App\Http\Controllers\EmailAuthController::class, 'register'])->name('auth.register.post');
-Route::post('/logout', [App\Http\Controllers\EmailAuthController::class, 'logout'])->name('auth.logout');
-Route::get('/dashboard', [App\Http\Controllers\EmailAuthController::class, 'dashboard'])->name('dashboard');
+// Simple Email Authentication (No Database)
+Route::get('/login', [App\Http\Controllers\SimpleAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [App\Http\Controllers\SimpleAuthController::class, 'sendLoginCode'])->name('auth.send-code');
+Route::get('/verify', [App\Http\Controllers\SimpleAuthController::class, 'showVerifyCode'])->name('auth.verify');
+Route::post('/verify', [App\Http\Controllers\SimpleAuthController::class, 'verifyCode'])->name('auth.verify');
+Route::get('/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register');
+Route::post('/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
+Route::get('/dashboard', [App\Http\Controllers\SimpleAuthController::class, 'dashboard'])->name('dashboard');
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
