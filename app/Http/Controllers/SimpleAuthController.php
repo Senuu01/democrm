@@ -199,7 +199,16 @@ class SimpleAuthController extends Controller
                 \Log::error('Welcome email failed: ' . $mailError->getMessage());
             }
 
-            return redirect()->route('login')->with('success', 'Account created! Check your email and then login.');
+            // Auto-login the user after successful registration
+            Session::put('authenticated', true);
+            Session::put('user_email', $email);
+            Session::put('user_data', [
+                'name' => $name,
+                'email' => $email,
+                'company' => $company
+            ]);
+
+            return redirect()->route('dashboard')->with('success', 'Welcome to Connectly! Your account has been created successfully.');
             
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['email' => 'Registration failed. Please try again. Error: ' . $e->getMessage()]);
