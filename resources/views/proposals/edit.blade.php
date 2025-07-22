@@ -19,7 +19,7 @@
                             <select id="customer_id" name="customer_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
                                 <option value="">Select Customer</option>
                                 @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ old('customer_id', $proposal->customer_id) == $customer->id ? 'selected' : '' }}>{{ $customer->name }}</option>
+                                    <option value="{{ $customer['id'] }}" {{ old('customer_id', $proposal['customer_id'] ?? $proposal->customer_id) == $customer['id'] ? 'selected' : '' }}>{{ $customer['name'] }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('customer_id')" class="mt-2" />

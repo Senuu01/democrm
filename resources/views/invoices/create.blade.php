@@ -17,8 +17,8 @@
                             <select name="customer_id" id="customer_id" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
                                 <option value="">Select a customer</option>
                                 @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }} ({{ $customer->company_name }})
+                                    <option value="{{ $customer['id'] }}" {{ old('customer_id') == $customer['id'] ? 'selected' : '' }}>
+                                        {{ $customer['name'] }} ({{ $customer['company_name'] ?? 'N/A' }})
                                     </option>
                                 @endforeach
                             </select>

@@ -15,45 +15,45 @@
 
                         <div>
                             <x-input-label for="name" :value="__('Name')" />
-                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $customer->name)" required autofocus />
+                            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $customer['name'] ?? '')" required autofocus />
                             <x-input-error class="mt-2" :messages="$errors->get('name')" />
                         </div>
 
                         <div>
                             <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $customer->email)" required />
+                            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $customer['email'] ?? '')" required />
                             <x-input-error class="mt-2" :messages="$errors->get('email')" />
                         </div>
 
                         <div>
                             <x-input-label for="phone" :value="__('Phone')" />
-                            <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $customer->phone)" />
+                            <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $customer['phone'] ?? '')" />
                             <x-input-error class="mt-2" :messages="$errors->get('phone')" />
                         </div>
 
                         <div>
                             <x-input-label for="company_name" :value="__('Company Name')" />
-                            <x-text-input id="company_name" name="company_name" type="text" class="mt-1 block w-full" :value="old('company_name', $customer->company_name)" />
+                            <x-text-input id="company_name" name="company_name" type="text" class="mt-1 block w-full" :value="old('company_name', $customer['company_name'] ?? '')" />
                             <x-input-error class="mt-2" :messages="$errors->get('company_name')" />
                         </div>
 
                         <div>
                             <x-input-label for="address" :value="__('Address')" />
-                            <textarea id="address" name="address" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="3">{{ old('address', $customer->address) }}</textarea>
+                            <textarea id="address" name="address" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="3">{{ old('address', $customer['address'] ?? '') }}</textarea>
                             <x-input-error class="mt-2" :messages="$errors->get('address')" />
                         </div>
 
                         <div>
                             <x-input-label for="notes" :value="__('Notes')" />
-                            <textarea id="notes" name="notes" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="3">{{ old('notes', $customer->notes) }}</textarea>
+                            <textarea id="notes" name="notes" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" rows="3">{{ old('notes', $customer['notes'] ?? '') }}</textarea>
                             <x-input-error class="mt-2" :messages="$errors->get('notes')" />
                         </div>
 
                         <div>
                             <x-input-label for="status" :value="__('Status')" />
                             <select id="status" name="status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="active" {{ $customer->status === 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="inactive" {{ $customer->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                                <option value="active" {{ ($customer['status'] ?? 'active') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ ($customer['status'] ?? 'active') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                             </select>
                             <x-input-error class="mt-2" :messages="$errors->get('status')" />
                         </div>
