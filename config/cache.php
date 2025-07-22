@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    'default' => 'file', // FORCED TO FILE - NO DATABASE CACHE ALLOWED
 
     /*
     |--------------------------------------------------------------------------

@@ -56,45 +56,58 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['simple.auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // TEMPORARY: Dashboard route disabled due to database connection issues
+    // Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', function () {
+        return view('dashboard-simple', [
+            'message' => 'Dashboard temporarily simplified while fixing database connections.',
+            'user' => session('user_data', ['name' => 'User', 'email' => session('user_email')])
+        ]);
+    })->name('dashboard');
 
-    // Profile routes
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Profile routes - DISABLED (use database)
+    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Resource routes
-    Route::resource('customers', CustomerController::class);
-    Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
-    Route::post('/customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
-    Route::get('/customers-export', [CustomerController::class, 'export'])->name('customers.export');
+    // Resource routes - DISABLED (use database)
+    // Route::resource('customers', CustomerController::class);
+    // Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
+    // Route::post('/customers/bulk-action', [CustomerController::class, 'bulkAction'])->name('customers.bulk-action');
+    // Route::get('/customers-export', [CustomerController::class, 'export'])->name('customers.export');
     
-    Route::resource('proposals', ProposalController::class);
-    Route::get('/proposals/{proposal}/pdf', [ProposalController::class, 'generatePdf'])->name('proposals.pdf');
-    Route::post('/proposals/{proposal}/duplicate', [ProposalController::class, 'duplicate'])->name('proposals.duplicate');
-    Route::post('/proposals/{proposal}/convert-to-invoice', [ProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
+    // Route::resource('proposals', ProposalController::class);
+    // Route::get('/proposals/{proposal}/pdf', [ProposalController::class, 'generatePdf'])->name('proposals.pdf');
+    // Route::post('/proposals/{proposal}/duplicate', [ProposalController::class, 'duplicate'])->name('proposals.duplicate');
+    // Route::post('/proposals/{proposal}/convert-to-invoice', [ProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
     
-    Route::resource('invoices', InvoiceController::class);
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+    // Route::resource('invoices', InvoiceController::class);
+    // Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('invoices.pdf');
     
-    Route::resource('transactions', TransactionController::class)->only(['index', 'show']);
-    Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
-    Route::patch('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.updateStatus');
-    Route::post('/transactions/{transaction}/sync', [TransactionController::class, 'syncWithStripe'])->name('transactions.sync');
-    Route::post('/transactions/sync-all-pending', [TransactionController::class, 'syncAllPending'])->name('transactions.syncAllPending');
-    Route::get('/transactions/{transaction}/status', [TransactionController::class, 'getStatus'])->name('transactions.getStatus');
+    // Route::resource('transactions', TransactionController::class)->only(['index', 'show']);
+    // Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
+    // Route::patch('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])->name('transactions.updateStatus');
+    // Route::post('/transactions/{transaction}/sync', [TransactionController::class, 'syncWithStripe'])->name('transactions.sync');
+    // Route::post('/transactions/sync-all-pending', [TransactionController::class, 'syncAllPending'])->name('transactions.syncAllPending');
+    // Route::get('/transactions/{transaction}/status', [TransactionController::class, 'getStatus'])->name('transactions.getStatus');
 
-    // Invoice payment routes
-    Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
-    Route::get('/invoices/{invoice}/payment', [InvoiceController::class, 'payment'])->name('invoices.payment');
-    Route::get('/pay/{invoice}', [InvoiceController::class, 'redirectToStripe'])->name('invoices.pay');
-    Route::get('/invoices/{invoice}/payment/success', [InvoiceController::class, 'paymentSuccess'])->name('invoices.payment.success');
-    Route::get('/invoices/{invoice}/check-payment-status', [InvoiceController::class, 'checkPaymentStatus'])->name('invoices.checkPaymentStatus');
-    Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'changeStatus'])->name('invoices.status');
+    // Invoice payment routes - DISABLED (use database)
+    // Route::post('/invoices/{invoice}/send', [InvoiceController::class, 'send'])->name('invoices.send');
+    // Route::get('/invoices/{invoice}/payment', [InvoiceController::class, 'payment'])->name('invoices.payment');
+    // Route::get('/pay/{invoice}', [InvoiceController::class, 'redirectToStripe'])->name('invoices.pay');
+    // Route::get('/invoices/{invoice}/payment/success', [InvoiceController::class, 'paymentSuccess'])->name('invoices.payment.success');
+    // Route::get('/invoices/{invoice}/check-payment-status', [InvoiceController::class, 'checkPaymentStatus'])->name('invoices.checkPaymentStatus');
+    // Route::patch('/invoices/{invoice}/status', [InvoiceController::class, 'changeStatus'])->name('invoices.status');
 
-    // Proposal status routes
-    Route::post('/proposals/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('proposals.updateStatus');
-    Route::post('/proposals/{proposal}/send-email', [ProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
+    // Proposal status routes - DISABLED (use database)
+    // Route::post('/proposals/{proposal}/status', [ProposalController::class, 'updateStatus'])->name('proposals.updateStatus');
+    // Route::post('/proposals/{proposal}/send-email', [ProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
+    
+    // SUPABASE-BASED ROUTES (These work!)
+    Route::get('/customers', [SupabaseController::class, 'customers'])->name('customers.index');
+    Route::post('/customers', [SupabaseController::class, 'storeCustomer'])->name('customers.store');
+    Route::get('/proposals', [SupabaseController::class, 'proposals'])->name('proposals.index');
+    Route::post('/proposals', [SupabaseController::class, 'storeProposal'])->name('proposals.store');
 });
 
 // Stripe webhook (no auth required)

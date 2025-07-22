@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'null'),
+    'default' => 'null', // FORCED TO NULL - NO DATABASE CONNECTIONS ALLOWED
 
     /*
     |--------------------------------------------------------------------------
