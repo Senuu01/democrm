@@ -67,13 +67,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
-// Simple Supabase Authentication (no database required)
-Route::get('/login', [App\Http\Controllers\SupabaseAuthController::class, 'showLogin'])->name('supabase.login');
-Route::post('/login', [App\Http\Controllers\SupabaseAuthController::class, 'login'])->name('supabase.login.post');
-Route::get('/register', [App\Http\Controllers\SupabaseAuthController::class, 'showRegister'])->name('supabase.register');
-Route::post('/register', [App\Http\Controllers\SupabaseAuthController::class, 'register'])->name('supabase.register.post');
-Route::post('/logout', [App\Http\Controllers\SupabaseAuthController::class, 'logout'])->name('supabase.logout');
-Route::get('/dashboard', [App\Http\Controllers\SupabaseAuthController::class, 'dashboard'])->name('dashboard');
+// Email-based Authentication with Resend + Supabase
+Route::get('/login', [App\Http\Controllers\EmailAuthController::class, 'showLogin'])->name('auth.login');
+Route::post('/login', [App\Http\Controllers\EmailAuthController::class, 'sendLoginCode'])->name('auth.send-code');
+Route::get('/verify', [App\Http\Controllers\EmailAuthController::class, 'showVerifyCode'])->name('auth.verify-code');
+Route::post('/verify', [App\Http\Controllers\EmailAuthController::class, 'verifyCode'])->name('auth.verify-code.post');
+Route::get('/register', [App\Http\Controllers\EmailAuthController::class, 'showRegister'])->name('auth.register');
+Route::post('/register', [App\Http\Controllers\EmailAuthController::class, 'register'])->name('auth.register.post');
+Route::post('/logout', [App\Http\Controllers\EmailAuthController::class, 'logout'])->name('auth.logout');
+Route::get('/dashboard', [App\Http\Controllers\EmailAuthController::class, 'dashboard'])->name('dashboard');
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
