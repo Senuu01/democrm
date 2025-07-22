@@ -24,9 +24,16 @@ Route::get('/clear-cache', function() {
         \Artisan::call('route:clear');
         \Artisan::call('config:clear');
         \Artisan::call('view:clear');
+        \Artisan::call('cache:clear');
         return response()->json([
             'status' => 'success',
-            'message' => 'Cache cleared successfully'
+            'message' => 'All caches cleared successfully',
+            'cleared' => [
+                'config' => 'Configuration cache cleared',
+                'routes' => 'Route cache cleared', 
+                'views' => 'View cache cleared',
+                'cache' => 'Application cache cleared'
+            ]
         ]);
     } catch (\Exception $e) {
         return response()->json([
@@ -125,6 +132,37 @@ Route::get('/clear-all-users', [App\Http\Controllers\EmailPasswordAuthController
 Route::get('/debug', function () {
     return view('debug');
 })->name('debug');
+
+// Check configuration
+Route::get('/check-config', function() {
+    return response()->json([
+        'database' => [
+            'connection' => config('database.default'),
+            'status' => config('database.default') === 'null' ? '✅ Disabled (Good!)' : '❌ Enabled (May cause issues)'
+        ],
+        'session' => [
+            'driver' => config('session.driver'),
+            'status' => config('session.driver') === 'file' ? '✅ File-based (Good!)' : '❌ Database-based (May cause issues)'
+        ],
+        'queue' => [
+            'connection' => config('queue.default'),
+            'status' => config('queue.default') === 'sync' ? '✅ Sync (Good!)' : '❌ Database-based (May cause issues)'
+        ],
+        'cache' => [
+            'store' => config('cache.default'),
+            'status' => in_array(config('cache.default'), ['file', 'array']) ? '✅ File/Array (Good!)' : '❌ Database-based (May cause issues)'
+        ],
+        'supabase' => [
+            'url' => config('services.supabase.url') ? '✅ Configured' : '❌ Missing',
+            'service_key' => config('services.supabase.service_role_key') ? '✅ Configured' : '❌ Missing',
+            'anon_key' => config('services.supabase.anon_key') ? '✅ Configured' : '❌ Missing'
+        ],
+        'mail' => [
+            'mailer' => config('mail.default'),
+            'from_address' => config('mail.from.address')
+        ]
+    ]);
+});
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
