@@ -130,4 +130,46 @@ Route::get('/test-register', function() {
     return view('test-signup');
 });
 
+// Setup route to create Supabase users table
+Route::get('/setup-database', function() {
+    try {
+        $supabase = app(\App\Services\SupabaseService::class);
+        
+        // First, try to create the users table directly via SQL
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'apikey' => config('services.supabase.service_role_key'),
+            'Authorization' => 'Bearer ' . config('services.supabase.service_role_key'),
+            'Content-Type' => 'application/json',
+        ])->post(config('services.supabase.url') . '/rest/v1/rpc/exec', [
+            'sql' => "
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    company VARCHAR(255),
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+                
+                -- Insert a test user
+                INSERT INTO users (name, email, company) 
+                VALUES ('Test User', 'test@example.com', 'Test Company')
+                ON CONFLICT (email) DO NOTHING;
+            "
+        ]);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Database setup complete',
+            'response' => $response->json()
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Database setup failed: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
 // require __DIR__.'/auth.php'; // Commented out to use SimpleAuth instead

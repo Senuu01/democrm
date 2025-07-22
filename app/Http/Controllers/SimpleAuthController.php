@@ -31,7 +31,7 @@ class SimpleAuthController extends Controller
         }
 
         try {
-            // Generate 6-digit code (always generate, even if user doesn't exist for security)
+            // Generate 6-digit code
             $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
             
             // Check if user exists in Supabase
@@ -41,36 +41,42 @@ class SimpleAuthController extends Controller
             try {
                 $user = $this->supabase->query('users', '*', ['email' => $email]);
                 $userExists = !empty($user) && is_array($user) && count($user) > 0;
+                
+                if (!$userExists) {
+                    return back()->withInput()->withErrors(['email' => 'Email not found. Please register first.']);
+                }
             } catch (\Exception $e) {
-                // Supabase query failed, but continue to avoid revealing database issues
+                return back()->withInput()->withErrors(['email' => 'Database error. Please try again later.']);
             }
             
-            // Store in session temporarily (whether user exists or not for security)
+            // Store in session temporarily
             Session::put('login_email', $email);
             Session::put('login_code', $code);
             Session::put('code_expires', time() + 600); // 10 minutes
-            Session::put('user_exists', $userExists);
-            Session::put('user_data', $userExists && isset($user[0]) ? $user[0] : ['email' => $email]);
+            Session::put('user_data', $user[0]);
 
             // Send email via Laravel Mail with Resend
-            // Temporarily send to all emails for testing - remove this condition later
             try {
                 Mail::send([], [], function ($message) use ($email, $code) {
                     $message->to($email)
                             ->subject('Your Connectly Login Code')
                             ->html("
-                                <h2>Your Login Code</h2>
-                                <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
-                                <p>This code expires in 10 minutes.</p>
-                                <p><small>User exists: " . ($userExists ? 'Yes' : 'No') . "</small></p>
+                                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                    <h2 style='color: #4f46e5; text-align: center;'>Your Login Code</h2>
+                                    <div style='background: #f8fafc; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;'>
+                                        <p style='font-size: 18px; color: #64748b; margin-bottom: 10px;'>Your login code is:</p>
+                                        <p style='font-size: 32px; font-weight: bold; color: #4f46e5; letter-spacing: 4px; margin: 10px 0;'>{$code}</p>
+                                    </div>
+                                    <p style='color: #64748b; text-align: center;'>This code expires in 10 minutes.</p>
+                                    <p style='color: #64748b; text-align: center; font-size: 14px;'>If you didn't request this code, please ignore this email.</p>
+                                </div>
                             ");
                 });
             } catch (\Exception $mailError) {
                 return back()->withInput()->withErrors(['email' => 'Failed to send email: ' . $mailError->getMessage()]);
             }
 
-            // Always show success message for security (don't reveal if user exists)
-            return redirect()->route('auth.verify')->with('success', 'If this email is registered, a login code has been sent!');
+            return redirect()->route('auth.verify')->with('success', 'Login code sent to your email!');
             
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['email' => 'Failed to send code. Please try again. Error: ' . $e->getMessage()]);
@@ -106,21 +112,10 @@ class SimpleAuthController extends Controller
             return back()->withErrors(['code' => 'Invalid code']);
         }
         
-        // Check if user actually exists before logging them in
-        $userExists = Session::get('user_exists', false);
-        // Temporarily allow login even if user doesn't exist for testing
-        // Remove this condition later and uncomment below
-        /*
-        if (!$userExists) {
-            Session::flush();
-            return redirect()->route('login')->withErrors(['email' => 'Email not found. Please register first.']);
-        }
-        */
-
         // Login successful
         Session::put('authenticated', true);
         Session::put('user_email', $email);
-        Session::forget(['login_code', 'code_expires', 'user_exists']);
+        Session::forget(['login_code', 'code_expires']);
         
         return redirect()->route('dashboard');
     }
@@ -167,16 +162,29 @@ class SimpleAuthController extends Controller
             }
 
             // Send welcome email
-            Mail::send([], [], function ($message) use ($email, $name) {
-                $message->to($email)
-                        ->subject('Welcome to Connectly!')
-                        ->html("
-                            <h2>Welcome to Connectly!</h2>
-                            <p>Hi {$name},</p>
-                            <p>Welcome to Connectly - your modern CRM solution!</p>
-                            <p>You can now login to start managing your customers.</p>
-                        ");
-            });
+            try {
+                Mail::send([], [], function ($message) use ($email, $name) {
+                    $message->to($email)
+                            ->subject('Welcome to Connectly!')
+                            ->html("
+                                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
+                                    <h2 style='color: #4f46e5; text-align: center;'>Welcome to Connectly!</h2>
+                                    <div style='background: #f8fafc; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                                        <p style='font-size: 18px; color: #1f2937;'>Hi {$name},</p>
+                                        <p style='color: #64748b;'>Welcome to Connectly - your modern CRM solution!</p>
+                                        <p style='color: #64748b;'>You can now login to start managing your customers and grow your business.</p>
+                                    </div>
+                                    <div style='text-align: center; margin: 30px 0;'>
+                                        <a href='" . route('login') . "' style='background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;'>Login Now</a>
+                                    </div>
+                                    <p style='color: #64748b; text-align: center; font-size: 14px;'>Thank you for joining Connectly!</p>
+                                </div>
+                            ");
+                });
+            } catch (\Exception $mailError) {
+                // Registration still succeeds even if welcome email fails
+                \Log::error('Welcome email failed: ' . $mailError->getMessage());
+            }
 
             return redirect()->route('login')->with('success', 'Account created! Check your email and then login.');
             
