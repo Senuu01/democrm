@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiAuthController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\ProposalController;
+use App\Http\Controllers\Api\InvoiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +39,31 @@ Route::middleware('api.auth')->group(function () {
         Route::put('/{id}', [CustomerController::class, 'update'])->name('update');
         Route::patch('/{id}', [CustomerController::class, 'update'])->name('patch');
         Route::delete('/{id}', [CustomerController::class, 'destroy'])->name('destroy');
+    });
+    
+    // Proposal Management API
+    Route::prefix('proposals')->name('api.proposals.')->group(function () {
+        Route::get('/', [ProposalController::class, 'index'])->name('index');
+        Route::post('/', [ProposalController::class, 'store'])->name('store');
+        Route::get('/stats', [ProposalController::class, 'stats'])->name('stats');
+        Route::get('/{id}', [ProposalController::class, 'show'])->name('show');
+        Route::put('/{id}', [ProposalController::class, 'update'])->name('update');
+        Route::patch('/{id}', [ProposalController::class, 'update'])->name('patch');
+        Route::delete('/{id}', [ProposalController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/status', [ProposalController::class, 'updateStatus'])->name('status');
+    });
+    
+    // Invoice Management API
+    Route::prefix('invoices')->name('api.invoices.')->group(function () {
+        Route::get('/', [InvoiceController::class, 'index'])->name('index');
+        Route::post('/', [InvoiceController::class, 'store'])->name('store');
+        Route::get('/stats', [InvoiceController::class, 'stats'])->name('stats');
+        Route::get('/{id}', [InvoiceController::class, 'show'])->name('show');
+        Route::put('/{id}', [InvoiceController::class, 'update'])->name('update');
+        Route::patch('/{id}', [InvoiceController::class, 'update'])->name('patch');
+        Route::delete('/{id}', [InvoiceController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/status', [InvoiceController::class, 'updateStatus'])->name('status');
+        Route::post('/{id}/payment', [InvoiceController::class, 'createPayment'])->name('payment');
     });
     
     // Health Check
@@ -89,6 +116,27 @@ Route::get('/info', function () {
                 'DELETE /api/customers/{id}' => 'Soft delete customer',
                 'GET /api/customers/stats' => 'Get customer statistics',
                 'POST /api/customers/bulk' => 'Bulk operations (delete/update_status)'
+            ],
+            'proposals' => [
+                'GET /api/proposals' => 'Get proposals list with pagination and search',
+                'POST /api/proposals' => 'Create new proposal with line items',
+                'GET /api/proposals/{id}' => 'Get specific proposal with optional includes',
+                'PUT /api/proposals/{id}' => 'Update proposal (full update)',
+                'PATCH /api/proposals/{id}' => 'Update proposal (partial update)',
+                'DELETE /api/proposals/{id}' => 'Delete proposal (draft only)',
+                'GET /api/proposals/stats' => 'Get proposal statistics and conversion rates',
+                'PATCH /api/proposals/{id}/status' => 'Update proposal status'
+            ],
+            'invoices' => [
+                'GET /api/invoices' => 'Get invoices list with pagination and search',
+                'POST /api/invoices' => 'Create new invoice with line items',
+                'GET /api/invoices/{id}' => 'Get specific invoice with optional includes',
+                'PUT /api/invoices/{id}' => 'Update invoice (full update)',
+                'PATCH /api/invoices/{id}' => 'Update invoice (partial update)',
+                'DELETE /api/invoices/{id}' => 'Delete invoice (draft/cancelled only)',
+                'GET /api/invoices/stats' => 'Get invoice statistics and payment rates',
+                'PATCH /api/invoices/{id}/status' => 'Update invoice status',
+                'POST /api/invoices/{id}/payment' => 'Create Stripe payment session'
             ],
             'system' => [
                 'GET /api/health' => 'API health check',
