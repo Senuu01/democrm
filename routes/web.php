@@ -59,21 +59,7 @@ Route::middleware(['simple.auth'])->group(function () {
     // Professional Dashboard with Supabase Analytics
     Route::get('/dashboard', [App\Http\Controllers\SupabaseDashboardController::class, 'index'])->name('dashboard');
 
-    // Supabase-based Customer Management
-    Route::resource('customers', App\Http\Controllers\SupabaseCustomerController::class);
-    Route::post('/customers/{customer}/toggle-status', [App\Http\Controllers\SupabaseCustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
-    Route::post('/customers/bulk-action', [App\Http\Controllers\SupabaseCustomerController::class, 'bulkAction'])->name('customers.bulk-action');
-    Route::get('/customers-export', [App\Http\Controllers\SupabaseCustomerController::class, 'export'])->name('customers.export');
-    
-    // Supabase-based Proposal Management
-    Route::resource('proposals', App\Http\Controllers\SupabaseProposalController::class);
-    Route::get('/proposals/{proposal}/pdf', [App\Http\Controllers\SupabaseProposalController::class, 'generatePdf'])->name('proposals.pdf');
-    Route::post('/proposals/{proposal}/duplicate', [App\Http\Controllers\SupabaseProposalController::class, 'duplicate'])->name('proposals.duplicate');
-    Route::post('/proposals/{proposal}/convert-to-invoice', [App\Http\Controllers\SupabaseProposalController::class, 'convertToInvoice'])->name('proposals.convert-to-invoice');
-    
-    // Supabase-based Invoice Management
-    Route::resource('invoices', App\Http\Controllers\SupabaseInvoiceController::class);
-    Route::get('/invoices/{invoice}/pdf', [App\Http\Controllers\SupabaseInvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+
     
     // Route::resource('transactions', TransactionController::class)->only(['index', 'show']);
     // Route::post('/transactions/{transaction}/refund', [TransactionController::class, 'refund'])->name('transactions.refund');
