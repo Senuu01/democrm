@@ -66,7 +66,7 @@ class EmailAuthController extends Controller
     public function showVerifyCode()
     {
         if (!Session::has('login_email')) {
-            return redirect()->route('auth.login');
+            return redirect()->route('login');
         }
         
         return view('auth.verify-code');
@@ -78,7 +78,7 @@ class EmailAuthController extends Controller
         
         $email = Session::get('login_email');
         if (!$email) {
-            return redirect()->route('auth.login');
+            return redirect()->route('login');
         }
 
         try {
@@ -162,7 +162,7 @@ class EmailAuthController extends Controller
                     'html' => view('emails.welcome', ['name' => $request->name])->render()
                 ]);
 
-                return redirect()->route('auth.login')->with('success', 'Account created! You can now login.');
+                return redirect()->route('login')->with('success', 'Account created! You can now login.');
             }
             
             return back()->withErrors(['email' => 'Registration failed']);
@@ -181,7 +181,7 @@ class EmailAuthController extends Controller
     public function dashboard()
     {
         if (!Session::get('authenticated')) {
-            return redirect()->route('auth.login');
+            return redirect()->route('login');
         }
         
         $user = (object) [

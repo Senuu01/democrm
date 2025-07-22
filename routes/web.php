@@ -68,11 +68,11 @@ Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::cl
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
 // Email-based Authentication with Resend + Supabase
-Route::get('/login', [App\Http\Controllers\EmailAuthController::class, 'showLogin'])->name('auth.login');
+Route::get('/login', [App\Http\Controllers\EmailAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [App\Http\Controllers\EmailAuthController::class, 'sendLoginCode'])->name('auth.send-code');
 Route::get('/verify', [App\Http\Controllers\EmailAuthController::class, 'showVerifyCode'])->name('auth.verify-code');
 Route::post('/verify', [App\Http\Controllers\EmailAuthController::class, 'verifyCode'])->name('auth.verify-code.post');
-Route::get('/register', [App\Http\Controllers\EmailAuthController::class, 'showRegister'])->name('auth.register');
+Route::get('/register', [App\Http\Controllers\EmailAuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [App\Http\Controllers\EmailAuthController::class, 'register'])->name('auth.register.post');
 Route::post('/logout', [App\Http\Controllers\EmailAuthController::class, 'logout'])->name('auth.logout');
 Route::get('/dashboard', [App\Http\Controllers\EmailAuthController::class, 'dashboard'])->name('dashboard');

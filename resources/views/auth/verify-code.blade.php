@@ -40,7 +40,7 @@
         </form>
 
         <div class="mt-6 text-center">
-            <a href="{{ route('auth.login') }}" class="text-indigo-600 hover:text-indigo-500">
+            <a href="{{ route('login') }}" class="text-indigo-600 hover:text-indigo-500">
                 ← Use different email
             </a>
         </div>

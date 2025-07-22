@@ -45,7 +45,7 @@
         </form>
 
         <div class="mt-6 text-center">
-            <a href="{{ route('auth.register') }}" class="text-indigo-600 hover:text-indigo-500">
+            <a href="{{ route('register') }}" class="text-indigo-600 hover:text-indigo-500">
                 Don't have an account? Sign up
             </a>
         </div>
