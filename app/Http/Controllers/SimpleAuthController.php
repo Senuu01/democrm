@@ -40,12 +40,21 @@ class SimpleAuthController extends Controller
             
             try {
                 $user = $this->supabase->query('users', '*', ['email' => $email]);
-                $userExists = !empty($user) && is_array($user) && count($user) > 0;
+                \Log::info('Supabase query response:', ['user' => $user, 'type' => gettype($user)]);
                 
-                if (!$userExists) {
+                $userExists = !empty($user) && is_array($user) && count($user) > 0;
+                $userData = null;
+                
+                if ($userExists && isset($user[0])) {
+                    $userData = $user[0];
+                } elseif ($userExists && is_array($user)) {
+                    // Handle case where user data is directly in the response
+                    $userData = $user;
+                } else {
                     return back()->withInput()->withErrors(['email' => 'Email not found. Please register first.']);
                 }
             } catch (\Exception $e) {
+                \Log::error('Supabase query error:', ['error' => $e->getMessage()]);
                 return back()->withInput()->withErrors(['email' => 'Database error. Please try again later.']);
             }
             
@@ -53,7 +62,7 @@ class SimpleAuthController extends Controller
             Session::put('login_email', $email);
             Session::put('login_code', $code);
             Session::put('code_expires', time() + 600); // 10 minutes
-            Session::put('user_data', $user[0]);
+            Session::put('user_data', $userData);
 
             // Send email via Laravel Mail with Resend
             try {
@@ -142,7 +151,9 @@ class SimpleAuthController extends Controller
         try {
             // Check if user already exists in Supabase
             $existingUser = $this->supabase->query('users', '*', ['email' => $email]);
-            if (!empty($existingUser)) {
+            \Log::info('Registration check:', ['existingUser' => $existingUser, 'email' => $email]);
+            
+            if (!empty($existingUser) && is_array($existingUser) && count($existingUser) > 0) {
                 return back()->withInput()->withErrors(['email' => 'Email already registered. Please login instead.']);
             }
 
@@ -156,9 +167,11 @@ class SimpleAuthController extends Controller
             ];
 
             $result = $this->supabase->insert('users', $userData);
+            \Log::info('Supabase insert result:', ['result' => $result]);
             
-            if (!$result) {
-                return back()->withInput()->withErrors(['email' => 'Failed to create account. Please try again.']);
+            if (!$result || (is_array($result) && isset($result['error']))) {
+                $errorMessage = is_array($result) && isset($result['error']) ? $result['error']['message'] : 'Unknown error';
+                return back()->withInput()->withErrors(['email' => 'Failed to create account: ' . $errorMessage]);
             }
 
             // Send welcome email
