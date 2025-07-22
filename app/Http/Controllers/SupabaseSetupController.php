@@ -152,46 +152,6 @@ class SupabaseSetupController extends Controller
                 CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id);
                 CREATE INDEX IF NOT EXISTS idx_activities_subject ON activities(subject_type, subject_id);
                 CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at);
-
-                -- Create a function to update the updated_at timestamp
-                CREATE OR REPLACE FUNCTION update_updated_at_column()
-                RETURNS TRIGGER AS \$\$
-                BEGIN
-                    NEW.updated_at = NOW();
-                    RETURN NEW;
-                END;
-                \$\$ LANGUAGE plpgsql;
-
-                -- Create triggers to automatically update updated_at timestamps
-                DROP TRIGGER IF EXISTS update_auth_users_updated_at ON auth_users;
-                CREATE TRIGGER update_auth_users_updated_at 
-                    BEFORE UPDATE ON auth_users 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-                DROP TRIGGER IF EXISTS update_customers_updated_at ON customers;
-                CREATE TRIGGER update_customers_updated_at 
-                    BEFORE UPDATE ON customers 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-                DROP TRIGGER IF EXISTS update_proposals_updated_at ON proposals;
-                CREATE TRIGGER update_proposals_updated_at 
-                    BEFORE UPDATE ON proposals 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-                DROP TRIGGER IF EXISTS update_invoices_updated_at ON invoices;
-                CREATE TRIGGER update_invoices_updated_at 
-                    BEFORE UPDATE ON invoices 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-                DROP TRIGGER IF EXISTS update_transactions_updated_at ON transactions;
-                CREATE TRIGGER update_transactions_updated_at 
-                    BEFORE UPDATE ON transactions 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-                DROP TRIGGER IF EXISTS update_activities_updated_at ON activities;
-                CREATE TRIGGER update_activities_updated_at 
-                    BEFORE UPDATE ON activities 
-                    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
             ";
 
             // Execute the SQL using Supabase REST API
@@ -215,20 +175,23 @@ class SupabaseSetupController extends Controller
                         'invoices',
                         'transactions',
                         'activities'
-                    ]
+                    ],
+                    'response' => $response->json()
                 ]);
             } else {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Failed to create tables',
-                    'response' => $response->body()
+                    'response_body' => $response->body(),
+                    'status_code' => $response->status()
                 ], 500);
             }
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Database setup failed: ' . $e->getMessage()
+                'message' => 'Database setup failed: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
@@ -240,13 +203,13 @@ class SupabaseSetupController extends Controller
             $serviceRoleKey = config('services.supabase.service_role_key');
 
             // Check which tables exist
-            $sql = \"
-                SELECT table_name 
-                FROM information_schema.tables 
+            $sql = "
+                SELECT table_name, column_name, data_type, is_nullable
+                FROM information_schema.columns 
                 WHERE table_schema = 'public' 
-                AND table_type = 'BASE TABLE'
-                ORDER BY table_name;
-            \";
+                AND table_name IN ('auth_users', 'customers', 'proposals', 'invoices', 'transactions', 'activities')
+                ORDER BY table_name, ordinal_position;
+            ";
 
             $response = Http::withHeaders([
                 'apikey' => $serviceRoleKey,
@@ -267,7 +230,8 @@ class SupabaseSetupController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Failed to check tables',
-                    'response' => $response->body()
+                    'response' => $response->body(),
+                    'status_code' => $response->status()
                 ], 500);
             }
 
