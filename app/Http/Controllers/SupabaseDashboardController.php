@@ -39,19 +39,46 @@ class SupabaseDashboardController extends Controller
             $userId = $user['id'];
 
             // Get all data for this user
-            $customers = $this->supabase->query('customers', '*', ['user_id' => $userId]) ?: [];
-            $proposals = $this->supabase->query('proposals', '*', ['user_id' => $userId]) ?: [];
-            $invoices = $this->supabase->query('invoices', '*', ['user_id' => $userId]) ?: [];
-            $transactions = $this->supabase->query('transactions', '*', ['user_id' => $userId]) ?: [];
+            $customers = $this->supabase->query('customers', '*', ['user_id' => $userId]);
+            $customers = is_array($customers) ? $customers : [];
+            
+            $proposals = $this->supabase->query('proposals', '*', ['user_id' => $userId]);
+            $proposals = is_array($proposals) ? $proposals : [];
+            
+            $invoices = $this->supabase->query('invoices', '*', ['user_id' => $userId]);
+            $invoices = is_array($invoices) ? $invoices : [];
+            
+            $transactions = $this->supabase->query('transactions', '*', ['user_id' => $userId]);
+            $transactions = is_array($transactions) ? $transactions : [];
 
             // Calculate key metrics
-            $metrics = $this->calculateMetrics($customers, $proposals, $invoices, $transactions);
+            try {
+                $metrics = $this->calculateMetrics($customers, $proposals, $invoices, $transactions);
+            } catch (\Exception $e) {
+                \Log::error('Metrics calculation error: ' . $e->getMessage());
+                $metrics = $this->getDefaultMetrics();
+            }
             
             // Generate chart data
-            $chartData = $this->generateChartData($customers, $proposals, $invoices, $transactions);
+            try {
+                $chartData = $this->generateChartData($customers, $proposals, $invoices, $transactions);
+            } catch (\Exception $e) {
+                \Log::error('Chart data generation error: ' . $e->getMessage());
+                $chartData = $this->getDefaultChartData();
+            }
             
             // Get recent activities
-            $recentData = $this->getRecentData($customers, $proposals, $invoices, $transactions);
+            try {
+                $recentData = $this->getRecentData($customers, $proposals, $invoices, $transactions);
+            } catch (\Exception $e) {
+                \Log::error('Recent data error: ' . $e->getMessage());
+                $recentData = $this->getDefaultRecentData();
+            }
+
+            // Ensure all data are arrays before merging
+            $metrics = is_array($metrics) ? $metrics : [];
+            $chartData = is_array($chartData) ? $chartData : [];
+            $recentData = is_array($recentData) ? $recentData : [];
 
             return view('dashboard-professional', array_merge($metrics, $chartData, $recentData, [
                 'user' => $user,
@@ -205,5 +232,64 @@ class SupabaseDashboardController extends Controller
         $topCustomers = array_slice($customerRevenue, 0, 5);
 
         return compact('recentCustomers', 'recentTransactions', 'overdueInvoicesList', 'topCustomers');
+    }
+
+    /**
+     * Get default metrics for error states
+     */
+    private function getDefaultMetrics()
+    {
+        return [
+            'totalCustomers' => 0,
+            'activeCustomers' => 0,
+            'inactiveCustomers' => 0,
+            'newCustomersThisMonth' => 0,
+            'totalProposals' => 0,
+            'pendingProposals' => 0,
+            'acceptedProposals' => 0,
+            'draftProposals' => 0,
+            'totalInvoices' => 0,
+            'pendingInvoices' => 0,
+            'paidInvoices' => 0,
+            'overdueInvoices' => 0,
+            'draftInvoices' => 0,
+            'totalRevenue' => 0,
+            'monthlyRevenue' => 0,
+            'proposalAcceptanceRate' => 0,
+            'invoicePaymentRate' => 0
+        ];
+    }
+
+    /**
+     * Get default chart data for error states
+     */
+    private function getDefaultChartData()
+    {
+        $months = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $months[] = [
+                'month' => Carbon::now()->subMonths($i)->format('M Y'),
+                'revenue' => 0,
+                'customers' => 0
+            ];
+        }
+        
+        return [
+            'revenueByMonth' => $months,
+            'customerGrowth' => $months
+        ];
+    }
+
+    /**
+     * Get default recent data for error states
+     */
+    private function getDefaultRecentData()
+    {
+        return [
+            'recentCustomers' => [],
+            'recentTransactions' => [],
+            'overdueInvoicesList' => [],
+            'topCustomers' => []
+        ];
     }
 } 
