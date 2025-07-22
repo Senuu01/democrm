@@ -9,7 +9,8 @@
       "Bash(rm:*)",
       "WebFetch(domain:web-production-86175.up.railway.app)",
       "Bash(mv:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }
