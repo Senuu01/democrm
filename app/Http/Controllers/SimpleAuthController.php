@@ -31,33 +31,42 @@ class SimpleAuthController extends Controller
         }
 
         try {
-            // Check if user exists in Supabase
-            $user = $this->supabase->query('users', '*', ['email' => $email]);
-            if (empty($user)) {
-                return back()->withInput()->withErrors(['email' => 'Email not found. Please register first.']);
-            }
-
-            // Generate 6-digit code
+            // Generate 6-digit code (always generate, even if user doesn't exist for security)
             $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
             
-            // Store in session temporarily
+            // Check if user exists in Supabase
+            $user = null;
+            $userExists = false;
+            
+            try {
+                $user = $this->supabase->query('users', '*', ['email' => $email]);
+                $userExists = !empty($user) && is_array($user) && count($user) > 0;
+            } catch (\Exception $e) {
+                // Supabase query failed, but continue to avoid revealing database issues
+            }
+            
+            // Store in session temporarily (whether user exists or not for security)
             Session::put('login_email', $email);
             Session::put('login_code', $code);
             Session::put('code_expires', time() + 600); // 10 minutes
-            Session::put('user_data', $user[0]); // Store user data from Supabase
+            Session::put('user_exists', $userExists);
+            Session::put('user_data', $userExists && isset($user[0]) ? $user[0] : ['email' => $email]);
 
-            // Send email via Laravel Mail with Resend
-            Mail::send([], [], function ($message) use ($email, $code) {
-                $message->to($email)
-                        ->subject('Your Connectly Login Code')
-                        ->html("
-                            <h2>Your Login Code</h2>
-                            <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
-                            <p>This code expires in 10 minutes.</p>
-                        ");
-            });
+            // Send email via Laravel Mail with Resend (only if user exists)
+            if ($userExists) {
+                Mail::send([], [], function ($message) use ($email, $code) {
+                    $message->to($email)
+                            ->subject('Your Connectly Login Code')
+                            ->html("
+                                <h2>Your Login Code</h2>
+                                <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
+                                <p>This code expires in 10 minutes.</p>
+                            ");
+                });
+            }
 
-            return redirect()->route('auth.verify')->with('success', 'Login code sent to your email!');
+            // Always show success message for security (don't reveal if user exists)
+            return redirect()->route('auth.verify')->with('success', 'If this email is registered, a login code has been sent!');
             
         } catch (\Exception $e) {
             return back()->withInput()->withErrors(['email' => 'Failed to send code. Please try again. Error: ' . $e->getMessage()]);
@@ -92,11 +101,18 @@ class SimpleAuthController extends Controller
         if ($code !== $sessionCode) {
             return back()->withErrors(['code' => 'Invalid code']);
         }
+        
+        // Check if user actually exists before logging them in
+        $userExists = Session::get('user_exists', false);
+        if (!$userExists) {
+            Session::flush();
+            return redirect()->route('login')->withErrors(['email' => 'Email not found. Please register first.']);
+        }
 
         // Login successful
         Session::put('authenticated', true);
         Session::put('user_email', $email);
-        Session::forget(['login_code', 'code_expires']);
+        Session::forget(['login_code', 'code_expires', 'user_exists']);
         
         return redirect()->route('dashboard');
     }
