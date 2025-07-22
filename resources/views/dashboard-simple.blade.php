@@ -157,6 +157,40 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-user-cog text-2xl text-indigo-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">User Settings</h3>
+                                <p class="text-sm text-gray-600">Profile, security, and preferences</p>
+                                <a href="{{ route('settings.index') }}" class="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
+                                    Manage Settings →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-chart-line text-2xl text-red-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Analytics Dashboard</h3>
+                                <p class="text-sm text-gray-600">Business insights and performance metrics</p>
+                                <a href="{{ route('analytics.index') }}" class="text-red-600 hover:text-red-500 text-sm font-medium">
+                                    View Analytics →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- User Information -->

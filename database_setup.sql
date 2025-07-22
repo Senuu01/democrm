@@ -110,6 +110,26 @@ CREATE TABLE IF NOT EXISTS activities (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create user_preferences table (for settings)
+CREATE TABLE IF NOT EXISTS user_preferences (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES auth_users(id) ON DELETE CASCADE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    customer_notifications BOOLEAN DEFAULT TRUE,
+    proposal_notifications BOOLEAN DEFAULT TRUE,
+    invoice_notifications BOOLEAN DEFAULT TRUE,
+    payment_notifications BOOLEAN DEFAULT TRUE,
+    marketing_emails BOOLEAN DEFAULT FALSE,
+    weekly_reports BOOLEAN DEFAULT TRUE,
+    language VARCHAR(5) DEFAULT 'en',
+    currency VARCHAR(3) DEFAULT 'USD',
+    date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY',
+    theme VARCHAR(10) DEFAULT 'light',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
 -- =====================================================
 -- 2. CREATE INDEXES FOR PERFORMANCE
 -- =====================================================

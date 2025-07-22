@@ -139,6 +139,17 @@ Route::middleware(['simple.auth'])->group(function () {
     Route::post('/invoices/{id}/send-email', [App\Http\Controllers\SupabaseInvoiceController::class, 'sendEmail'])->name('invoices.sendEmail');
     Route::get('/invoices/{id}/payment', [App\Http\Controllers\SupabaseInvoiceController::class, 'createPaymentSession'])->name('invoices.payment');
     Route::get('/invoices/{id}/payment/success', [App\Http\Controllers\SupabaseInvoiceController::class, 'paymentSuccess'])->name('invoices.payment.success');
+    
+    // USER SETTINGS & PROFILE MANAGEMENT
+    Route::get('/settings', [App\Http\Controllers\UserSettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/profile', [App\Http\Controllers\UserSettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::post('/settings/password', [App\Http\Controllers\UserSettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::post('/settings/preferences', [App\Http\Controllers\UserSettingsController::class, 'updatePreferences'])->name('settings.preferences');
+    Route::post('/settings/delete', [App\Http\Controllers\UserSettingsController::class, 'deleteAccount'])->name('settings.delete');
+    Route::get('/settings/export', [App\Http\Controllers\UserSettingsController::class, 'exportData'])->name('settings.export');
+    
+    // ANALYTICS DASHBOARD
+    Route::get('/analytics', [App\Http\Controllers\AnalyticsController::class, 'index'])->name('analytics.index');
 });
 
 // Stripe webhook (no auth required)
