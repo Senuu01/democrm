@@ -139,6 +139,16 @@ Route::get('/test-register', function() {
     return view('test-signup');
 });
 
+// Test route to check session data
+Route::get('/test-session', function() {
+    return response()->json([
+        'authenticated' => Session::get('authenticated'),
+        'user_email' => Session::get('user_email'), 
+        'user_data' => Session::get('user_data'),
+        'all_session' => Session::all()
+    ]);
+});
+
 // Setup route to create Supabase users table
 Route::get('/setup-database', function() {
     try {
