@@ -1,14 +1,12 @@
 [phases.build]
 cmds = [
     "composer install --optimize-autoloader --no-dev",
-    "php artisan config:cache",
-    "php artisan route:cache",
     "chmod -R 775 storage",
     "chmod -R 775 bootstrap/cache"
 ]
 
 [phases.start]
-cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "php artisan config:cache && php artisan route:cache && php artisan serve --host=0.0.0.0 --port=$PORT"
 
 [variables]
 PHP_VERSION = "8.2"
