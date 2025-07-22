@@ -90,7 +90,7 @@ Route::post('/login', [App\Http\Controllers\SimpleAuthController::class, 'sendLo
 Route::get('/verify', [App\Http\Controllers\SimpleAuthController::class, 'showVerifyCode'])->name('auth.verify');
 Route::post('/verify', [App\Http\Controllers\SimpleAuthController::class, 'verifyCode'])->name('auth.verify.post');
 Route::get('/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register');
+Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
 Route::get('/dashboard', [App\Http\Controllers\SimpleAuthController::class, 'dashboard'])->name('dashboard');
 
