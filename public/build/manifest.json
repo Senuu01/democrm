@@ -1,12 +1,1 @@
-{
-  "resources/css/app.css": {
-    "file": "assets/app-fallback.css",
-    "isEntry": true,
-    "src": "resources/css/app.css"
-  },
-  "resources/js/app.js": {
-    "file": "assets/app-fallback.js",
-    "isEntry": true,
-    "src": "resources/js/app.js"
-  }
-}
+{}
