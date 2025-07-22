@@ -1,231 +1,181 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Payment Successful') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - Connectly CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="max-w-md w-full mx-4">
+            <!-- Success Card -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <!-- Success Icon -->
+                <div class="bg-green-500 p-6">
                     <div class="text-center">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
+                        <div class="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-check text-2xl text-green-500"></i>
                         </div>
-                        
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Payment Successful!</h3>
-                        <p class="text-gray-600 mb-6">Thank you for your payment. Your invoice has been marked as paid.</p>
-                        
-                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                            <h4 class="font-semibold text-gray-900 mb-4">Payment Details</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                <div>
-                                    <span class="text-sm font-medium text-gray-500">Invoice Number</span>
-                                    <p class="mt-1">{{ $invoice->invoice_number }}</p>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-500">Transaction Number</span>
-                                    <p class="mt-1" id="transactionNumber">{{ isset($transaction) ? $transaction->transaction_number : 'Processing...' }}</p>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-500">Amount Paid</span>
-                                    <p class="mt-1 text-lg font-semibold text-green-600">${{ number_format(isset($transaction) ? $transaction->amount : $invoice->total_amount, 2) }}</p>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-500">Payment Method</span>
-                                    <p class="mt-1">{{ isset($transaction) ? ucfirst($transaction->payment_method) : 'Stripe' }}</p>
-                                </div>
-                                <div>
-                                    <span class="text-sm font-medium text-gray-500">Status</span>
-                                    <p class="mt-1" id="paymentStatus">
-                                        @if(isset($transaction))
-                                            @if($transaction->status === 'completed')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                    ✓ Payment Successful
-                                                </span>
-                                            @elseif($transaction->status === 'pending')
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    ⏳ Processing...
-                                                </span>
-                                            @else
-                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                    {{ ucfirst($transaction->status) }}
-                                                </span>
-                                            @endif
-                                        @else
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                ⏳ Processing...
-                                            </span>
-                                        @endif
-                                    </p>
-                                </div>
+                        <h1 class="text-xl font-bold text-white">Payment Successful!</h1>
+                        <p class="text-green-100 mt-2">Thank you for your payment</p>
+                    </div>
+                </div>
+
+                <!-- Payment Details -->
+                <div class="p-6">
+                    <div class="text-center mb-6">
+                        <div class="text-3xl font-bold text-gray-900 mb-2">
+                            ${{ number_format($amount, 2) }}
+                        </div>
+                        <p class="text-gray-600">has been successfully processed</p>
+                    </div>
+
+                    <!-- Payment Information -->
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Invoice ID:</span>
+                                <span class="font-medium text-gray-900">#{{ $invoice_id }}</span>
                             </div>
-                            @if(!isset($transaction) || (isset($transaction) && $transaction->status === 'pending'))
-                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md" id="processingNotice">
-                                    <p class="text-sm text-blue-700">
-                                        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-blue-700 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Payment is being processed. Your transaction status will update automatically.
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Date:</span>
+                                <span class="font-medium text-gray-900">{{ date('M j, Y g:i A') }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Payment Method:</span>
+                                <span class="font-medium text-gray-900">
+                                    <i class="fas fa-credit-card mr-1"></i>
+                                    Card ending in •••• {{ substr($session->payment_intent ?? '0000', -4) }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Status:</span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Paid
+                                </span>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- What's Next -->
+                    <div class="border-t border-gray-200 pt-6 mt-6">
+                        <h3 class="text-sm font-medium text-gray-900 mb-3">What happens next?</h3>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex items-start">
+                                <i class="fas fa-envelope text-green-500 mt-0.5 mr-2 flex-shrink-0"></i>
+                                <span>A payment confirmation email has been sent to your email address</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-file-pdf text-red-500 mt-0.5 mr-2 flex-shrink-0"></i>
+                                <span>Your receipt and invoice are available for download</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-headset text-blue-500 mt-0.5 mr-2 flex-shrink-0"></i>
+                                <span>Our team will contact you if any follow-up is needed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-8 space-y-3">
+                        <a href="{{ route('invoices.show', $invoice_id) }}" 
+                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                            <i class="fas fa-file-invoice mr-2"></i>
+                            View Invoice
+                        </a>
                         
-                        <div class="flex justify-center space-x-4">
-                            <a href="{{ route('invoices.show', $invoice) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
-                                View Invoice
+                        <a href="{{ route('invoices.pdf', $invoice_id) }}" 
+                           class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <i class="fas fa-download mr-2"></i>
+                            Download Receipt
+                        </a>
+                    </div>
+
+                    <!-- Contact Support -->
+                    <div class="mt-6 text-center">
+                        <p class="text-xs text-gray-500">
+                            Questions about your payment? 
+                            <a href="mailto:support@connectly.com" class="text-blue-600 hover:text-blue-500">
+                                Contact Support
                             </a>
-                            <a href="{{ route('dashboard') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                Back to Dashboard
-                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="mt-6 text-center">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center justify-center space-x-4 text-sm text-gray-600">
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                            <span>Secure Payment</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-lock text-blue-500 mr-1"></i>
+                            <span>SSL Encrypted</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fab fa-stripe text-purple-500 mr-1"></i>
+                            <span>Powered by Stripe</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Back to Dashboard -->
+            <div class="mt-4 text-center">
+                <a href="{{ route('dashboard') }}" class="text-blue-600 hover:text-blue-500 text-sm font-medium">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Back to Dashboard
+                </a>
+            </div>
         </div>
     </div>
 
-    @push('scripts')
+    <!-- Confetti Animation -->
     <script>
-        // Auto-check payment status for pending transactions
-        let statusCheckInterval;
-        let checkAttempts = 0;
-        const maxAttempts = 20; // Check for up to 20 times (4 minutes)
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Only start checking if we have a transaction that's pending or no transaction yet
-            @if(!isset($transaction) || (isset($transaction) && $transaction->status === 'pending'))
-                setTimeout(() => {
-                    startStatusCheck();
-                }, 2000); // Wait 2 seconds before starting
-            @endif
-        });
-
-        function startStatusCheck() {
-            statusCheckInterval = setInterval(checkPaymentStatus, 12000); // Check every 12 seconds
-        }
-
-        function stopStatusCheck() {
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-            }
-        }
-
-        function checkPaymentStatus() {
-            checkAttempts++;
+        // Simple confetti effect
+        function createConfetti() {
+            const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'];
+            const confettiCount = 50;
             
-            // Stop checking after max attempts
-            if (checkAttempts >= maxAttempts) {
-                stopStatusCheck();
-                return;
-            }
-
-            // Get session ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session_id');
-            
-            if (!sessionId) {
-                stopStatusCheck();
-                return;
-            }
-
-            // Call a new endpoint to check payment status
-            fetch(`/invoices/{{ $invoice->id }}/check-payment-status?session_id=${sessionId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updatePaymentStatus(data.transaction);
-                        
-                        // If payment is completed, stop checking
-                        if (data.transaction.status === 'completed') {
-                            stopStatusCheck();
-                            hideProcessingNotice();
-                            showSuccessMessage();
-                        } else if (data.transaction.status === 'failed') {
-                            stopStatusCheck();
-                            showFailureMessage();
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking payment status:', error);
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.zIndex = '1000';
+                confetti.style.borderRadius = '50%';
+                confetti.style.pointerEvents = 'none';
+                
+                document.body.appendChild(confetti);
+                
+                // Animate confetti falling
+                const fall = confetti.animate([
+                    { transform: 'translateY(-10px) rotate(0deg)', opacity: 1 },
+                    { transform: `translateY(${window.innerHeight + 10}px) rotate(360deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 3000 + 2000,
+                    easing: 'cubic-bezier(0.5, 0, 0.5, 1)'
                 });
-        }
-
-        function updatePaymentStatus(transaction) {
-            // Update transaction number
-            const transactionNumberEl = document.getElementById('transactionNumber');
-            if (transactionNumberEl) {
-                transactionNumberEl.textContent = transaction.transaction_number;
-            }
-
-            // Update status badge
-            const statusEl = document.getElementById('paymentStatus');
-            if (statusEl) {
-                let statusHtml = '';
-                switch(transaction.status) {
-                    case 'completed':
-                        statusHtml = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">✓ Payment Successful</span>';
-                        break;
-                    case 'failed':
-                        statusHtml = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">✗ Payment Failed</span>';
-                        break;
-                    case 'pending':
-                        statusHtml = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">⏳ Processing...</span>';
-                        break;
-                    default:
-                        statusHtml = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">${transaction.status}</span>`;
-                }
-                statusEl.innerHTML = statusHtml;
+                
+                fall.addEventListener('finish', () => {
+                    confetti.remove();
+                });
             }
         }
-
-        function hideProcessingNotice() {
-            const notice = document.getElementById('processingNotice');
-            if (notice) {
-                notice.style.display = 'none';
-            }
-        }
-
-        function showSuccessMessage() {
-            // Create success notification
-            const successNotice = document.createElement('div');
-            successNotice.className = 'mt-4 p-3 bg-green-50 border border-green-200 rounded-md';
-            successNotice.innerHTML = `
-                <p class="text-sm text-green-700">
-                    <svg class="h-4 w-4 text-green-700 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Payment confirmed! Your invoice has been marked as paid.
-                </p>
-            `;
-            
-            // Insert after the payment details grid
-            const paymentGrid = document.querySelector('.grid');
-            paymentGrid.parentNode.insertBefore(successNotice, paymentGrid.nextSibling);
-        }
-
-        function showFailureMessage() {
-            const failureNotice = document.createElement('div');
-            failureNotice.className = 'mt-4 p-3 bg-red-50 border border-red-200 rounded-md';
-            failureNotice.innerHTML = `
-                <p class="text-sm text-red-700">
-                    <svg class="h-4 w-4 text-red-700 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Payment processing failed. Please contact support if you believe this is an error.
-                </p>
-            `;
-            
-            hideProcessingNotice();
-            const paymentGrid = document.querySelector('.grid');
-            paymentGrid.parentNode.insertBefore(failureNotice, paymentGrid.nextSibling);
-        }
+        
+        // Trigger confetti on page load
+        window.addEventListener('load', () => {
+            setTimeout(createConfetti, 500);
+        });
     </script>
-    @endpush
-</x-app-layout> 
+</body>
+</html> 

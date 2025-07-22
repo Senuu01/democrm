@@ -140,6 +140,23 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white overflow-hidden shadow rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-file-invoice text-2xl text-green-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Invoice & Payments</h3>
+                                <p class="text-sm text-gray-600">Manage invoices and Stripe payments</p>
+                                <a href="{{ route('invoices.index') }}" class="text-green-600 hover:text-green-500 text-sm font-medium">
+                                    Manage Invoices →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- User Information -->

@@ -126,6 +126,19 @@ Route::middleware(['simple.auth'])->group(function () {
     Route::get('/proposals/{id}/pdf', [App\Http\Controllers\SupabaseProposalController::class, 'generatePdf'])->name('proposals.pdf');
     Route::post('/proposals/{id}/send-email', [App\Http\Controllers\SupabaseProposalController::class, 'sendEmail'])->name('proposals.sendEmail');
     Route::post('/proposals/{id}/convert-to-invoice', [App\Http\Controllers\SupabaseProposalController::class, 'convertToInvoice'])->name('proposals.convertToInvoice');
+    
+    // SUPABASE-BASED INVOICE MANAGEMENT (Full CRUD + Stripe)
+    Route::get('/invoices', [App\Http\Controllers\SupabaseInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/create', [App\Http\Controllers\SupabaseInvoiceController::class, 'create'])->name('invoices.create');
+    Route::post('/invoices', [App\Http\Controllers\SupabaseInvoiceController::class, 'store'])->name('invoices.store');
+    Route::get('/invoices/{id}', [App\Http\Controllers\SupabaseInvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{id}/edit', [App\Http\Controllers\SupabaseInvoiceController::class, 'edit'])->name('invoices.edit');
+    Route::put('/invoices/{id}', [App\Http\Controllers\SupabaseInvoiceController::class, 'update'])->name('invoices.update');
+    Route::post('/invoices/{id}/status', [App\Http\Controllers\SupabaseInvoiceController::class, 'updateStatus'])->name('invoices.updateStatus');
+    Route::get('/invoices/{id}/pdf', [App\Http\Controllers\SupabaseInvoiceController::class, 'generatePdf'])->name('invoices.pdf');
+    Route::post('/invoices/{id}/send-email', [App\Http\Controllers\SupabaseInvoiceController::class, 'sendEmail'])->name('invoices.sendEmail');
+    Route::get('/invoices/{id}/payment', [App\Http\Controllers\SupabaseInvoiceController::class, 'createPaymentSession'])->name('invoices.payment');
+    Route::get('/invoices/{id}/payment/success', [App\Http\Controllers\SupabaseInvoiceController::class, 'paymentSuccess'])->name('invoices.payment.success');
 });
 
 // Stripe webhook (no auth required)
