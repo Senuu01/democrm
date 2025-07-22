@@ -10,7 +10,8 @@
       "WebFetch(domain:web-production-86175.up.railway.app)",
       "Bash(mv:*)",
       "Bash(cp:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(composer install:*)"
     ],
     "deny": []
   }

@@ -1,9 +1,6 @@
 [phases.build]
 cmds = [
     "composer install --optimize-autoloader --no-dev",
-    "npm ci",
-    "npm run build",
-    "ls -la public/build/",
     "chmod -R 775 storage",
     "chmod -R 775 bootstrap/cache"
 ]
