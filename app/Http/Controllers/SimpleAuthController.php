@@ -18,7 +18,7 @@ class SimpleAuthController extends Controller
 
     public function showLogin()
     {
-        return view('auth.simple-login');
+        return view('auth.login');
     }
 
     public function sendLoginCode(Request $request)
@@ -73,7 +73,7 @@ class SimpleAuthController extends Controller
             return redirect()->route('login');
         }
         
-        return view('auth.simple-verify');
+        return view('auth.verify');
     }
 
     public function verifyCode(Request $request)
@@ -106,7 +106,7 @@ class SimpleAuthController extends Controller
 
     public function showRegister()
     {
-        return view('auth.simple-register');
+        return view('auth.register');
     }
 
     public function register(Request $request)
