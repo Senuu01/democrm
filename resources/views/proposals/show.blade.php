@@ -36,49 +36,49 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <p class="text-sm font-medium text-gray-500">Title</p>
-                            <p class="mt-1 text-lg text-gray-900">{{ $proposal->title }}</p>
+                            <p class="mt-1 text-lg text-gray-900">{{ $proposal['title'] ?? 'N/A' }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Customer</p>
-                            <p class="mt-1 text-lg text-gray-900">{{ $proposal->customer->name ?? '-' }}</p>
+                            <p class="mt-1 text-lg text-gray-900">{{ $proposal['customer']['name'] ?? '-' }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Amount</p>
-                            <p class="mt-1 text-lg text-gray-900">${{ number_format($proposal->amount, 2) }}</p>
+                            <p class="mt-1 text-lg text-gray-900">${{ number_format($proposal['amount'] ?? 0, 2) }}</p>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Status</p>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                @if($proposal->status === 'accepted') bg-green-100 text-green-800
-                                @elseif($proposal->status === 'declined') bg-red-100 text-red-800
-                                @elseif($proposal->status === 'sent') bg-blue-100 text-blue-800
+                                @if(($proposal['status'] ?? 'draft') === 'accepted') bg-green-100 text-green-800
+                                @elseif(($proposal['status'] ?? 'draft') === 'declined') bg-red-100 text-red-800
+                                @elseif(($proposal['status'] ?? 'draft') === 'sent') bg-blue-100 text-blue-800
                                 @else bg-gray-100 text-gray-800
                                 @endif">
-                                {{ ucfirst($proposal->status) }}
+                                {{ ucfirst($proposal['status'] ?? 'draft') }}
                             </span>
-                            <form method="POST" action="{{ route('proposals.updateStatus', $proposal) }}" class="inline-block ml-4 align-middle">
+                            <form method="POST" action="{{ route('proposals.updateStatus', $proposal['id']) }}" class="inline-block ml-4 align-middle">
                                 @csrf
                                 <select name="status" class="rounded border-gray-300 text-sm px-2 py-1">
-                                    <option value="draft" @if($proposal->status=='draft') selected @endif>Draft</option>
-                                    <option value="sent" @if($proposal->status=='sent') selected @endif>Sent</option>
-                                    <option value="accepted" @if($proposal->status=='accepted') selected @endif>Accepted</option>
-                                    <option value="declined" @if($proposal->status=='declined') selected @endif>Declined</option>
+                                    <option value="draft" @if(($proposal['status'] ?? 'draft')=='draft') selected @endif>Draft</option>
+                                    <option value="sent" @if(($proposal['status'] ?? 'draft')=='sent') selected @endif>Sent</option>
+                                    <option value="accepted" @if(($proposal['status'] ?? 'draft')=='accepted') selected @endif>Accepted</option>
+                                    <option value="declined" @if(($proposal['status'] ?? 'draft')=='declined') selected @endif>Declined</option>
                                 </select>
                                 <button type="submit" class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded text-xs font-semibold hover:bg-indigo-700">Update</button>
                             </form>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">Valid Until</p>
-                            <p class="mt-1 text-lg text-gray-900">{{ $proposal->valid_until ? \Carbon\Carbon::parse($proposal->valid_until)->format('M d, Y') : '-' }}</p>
+                            <p class="mt-1 text-lg text-gray-900">{{ isset($proposal['valid_until']) && $proposal['valid_until'] ? \Carbon\Carbon::parse($proposal['valid_until'])->format('M d, Y') : '-' }}</p>
                         </div>
                     </div>
                     <div class="mb-6">
                         <p class="text-sm font-medium text-gray-500">Description</p>
-                        <p class="mt-1 text-gray-900">{{ $proposal->description }}</p>
+                        <p class="mt-1 text-gray-900">{{ $proposal['description'] ?? 'N/A' }}</p>
                     </div>
                     <div class="mb-6">
                         <p class="text-sm font-medium text-gray-500">Terms & Conditions</p>
-                        <p class="mt-1 text-gray-900">{{ $proposal->terms_conditions ?? '-' }}</p>
+                        <p class="mt-1 text-gray-900">{{ $proposal['terms_conditions'] ?? $proposal['terms'] ?? '-' }}</p>
                     </div>
                 </div>
             </div>

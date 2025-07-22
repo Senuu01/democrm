@@ -95,22 +95,22 @@
                                     <span class="text-sm font-medium text-gray-500">Date</span>
                                     <p class="mt-1">{{ \Carbon\Carbon::parse($transaction['created_at'] ?? now())->format('F j, Y H:i:s') }}</p>
                                 </div>
-                                @if($transaction->stripe_session_id)
+                                @if($transaction['stripe_session_id'] ?? '')
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Stripe Session ID</span>
-                                        <p class="mt-1 text-xs font-mono bg-gray-100 p-1 rounded">{{ $transaction->stripe_session_id }}</p>
+                                        <p class="mt-1 text-xs font-mono bg-gray-100 p-1 rounded">{{ $transaction['stripe_session_id'] }}</p>
                                     </div>
                                 @endif
-                                @if($transaction->stripe_payment_intent_id)
+                                @if($transaction['stripe_payment_intent_id'] ?? '')
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Stripe Payment Intent ID</span>
-                                        <p class="mt-1 text-xs font-mono bg-gray-100 p-1 rounded">{{ $transaction->stripe_payment_intent_id }}</p>
+                                        <p class="mt-1 text-xs font-mono bg-gray-100 p-1 rounded">{{ $transaction['stripe_payment_intent_id'] }}</p>
                                     </div>
                                 @endif
-                                @if($transaction->refund_id)
+                                @if($transaction['refund_id'] ?? '')
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Refund ID</span>
-                                        <p class="mt-1">{{ $transaction->refund_id }}</p>
+                                        <p class="mt-1">{{ $transaction['refund_id'] }}</p>
                                     </div>
                                 @endif
                             </div>
@@ -122,26 +122,26 @@
                             <div class="space-y-4">
                                 <div>
                                     <span class="text-sm font-medium text-gray-500">Name</span>
-                                    <p class="mt-1">{{ $transaction->customer->name }}</p>
+                                    <p class="mt-1">{{ $transaction['customer']['name'] ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <span class="text-sm font-medium text-gray-500">Company</span>
-                                    <p class="mt-1">{{ $transaction->customer->company_name }}</p>
+                                    <p class="mt-1">{{ $transaction['customer']['company'] ?? $transaction['customer']['company_name'] ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <span class="text-sm font-medium text-gray-500">Email</span>
-                                    <p class="mt-1">{{ $transaction->customer->email }}</p>
+                                    <p class="mt-1">{{ $transaction['customer']['email'] ?? 'N/A' }}</p>
                                 </div>
                                 <div>
                                     <span class="text-sm font-medium text-gray-500">Phone</span>
-                                    <p class="mt-1">{{ $transaction->customer->phone }}</p>
+                                    <p class="mt-1">{{ $transaction['customer']['phone'] ?? 'N/A' }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Invoice Information -->
-                    @if($transaction->invoice)
+                    @if($transaction['invoice'] ?? null)
                         <div class="mt-8">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoice Information</h3>
                             <div class="bg-gray-50 rounded-lg p-6">
@@ -149,8 +149,8 @@
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Invoice Number</span>
                                         <p class="mt-1">
-                                            <a href="{{ route('invoices.show', $transaction->invoice) }}" class="text-indigo-600 hover:text-indigo-900">
-                                                {{ $transaction->invoice->invoice_number }}
+                                            <a href="{{ route('invoices.show', $transaction['invoice']['id']) }}" class="text-indigo-600 hover:text-indigo-900">
+                                                {{ $transaction['invoice']['invoice_number'] ?? 'N/A' }}
                                             </a>
                                         </p>
                                     </div>
@@ -158,23 +158,23 @@
                                         <span class="text-sm font-medium text-gray-500">Status</span>
                                         <p class="mt-1">
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                @if($transaction->invoice->status === 'paid') bg-green-100 text-green-800
-                                                @elseif($transaction->invoice->status === 'overdue') bg-red-100 text-red-800
-                                                @elseif($transaction->invoice->status === 'sent') bg-blue-100 text-blue-800
-                                                @elseif($transaction->invoice->status === 'refunded') bg-yellow-100 text-yellow-800
+                                                @if(($transaction['invoice']['status'] ?? 'draft') === 'paid') bg-green-100 text-green-800
+                                                @elseif(($transaction['invoice']['status'] ?? 'draft') === 'overdue') bg-red-100 text-red-800
+                                                @elseif(($transaction['invoice']['status'] ?? 'draft') === 'sent') bg-blue-100 text-blue-800
+                                                @elseif(($transaction['invoice']['status'] ?? 'draft') === 'refunded') bg-yellow-100 text-yellow-800
                                                 @else bg-gray-100 text-gray-800
                                                 @endif">
-                                                {{ ucfirst($transaction->invoice->status) }}
+                                                {{ ucfirst($transaction['invoice']['status'] ?? 'draft') }}
                                             </span>
                                         </p>
                                     </div>
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Issue Date</span>
-                                        <p class="mt-1">{{ $transaction->invoice->issue_date->format('F j, Y') }}</p>
+                                        <p class="mt-1">{{ isset($transaction['invoice']['issue_date']) ? \Carbon\Carbon::parse($transaction['invoice']['issue_date'])->format('F j, Y') : 'N/A' }}</p>
                                     </div>
                                     <div>
                                         <span class="text-sm font-medium text-gray-500">Due Date</span>
-                                        <p class="mt-1">{{ $transaction->invoice->due_date->format('F j, Y') }}</p>
+                                        <p class="mt-1">{{ isset($transaction['invoice']['due_date']) ? \Carbon\Carbon::parse($transaction['invoice']['due_date'])->format('F j, Y') : 'N/A' }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -204,7 +204,7 @@
                 });
                 
                 // Auto-check status for pending transactions
-                @if($transaction->status === 'pending')
+                @if(($transaction['status'] ?? 'pending') === 'pending')
                     setTimeout(() => {
                         startStatusCheck();
                     }, 2000); // Start checking after 2 seconds
