@@ -125,4 +125,9 @@ Route::get('/test-supabase', function() {
     }
 })->name('test.supabase');
 
+// Test route to check if our registration view works
+Route::get('/test-register', function() {
+    return view('auth.register');
+});
+
 // require __DIR__.'/auth.php'; // Commented out to use SimpleAuth instead
