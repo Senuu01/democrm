@@ -67,8 +67,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
-Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
-Route::post('/login', [CustomLoginController::class, 'login']);
+// Simple Supabase Authentication (no database required)
+Route::get('/login', [App\Http\Controllers\SupabaseAuthController::class, 'showLogin'])->name('supabase.login');
+Route::post('/login', [App\Http\Controllers\SupabaseAuthController::class, 'login'])->name('supabase.login.post');
+Route::get('/register', [App\Http\Controllers\SupabaseAuthController::class, 'showRegister'])->name('supabase.register');
+Route::post('/register', [App\Http\Controllers\SupabaseAuthController::class, 'register'])->name('supabase.register.post');
+Route::post('/logout', [App\Http\Controllers\SupabaseAuthController::class, 'logout'])->name('supabase.logout');
+Route::get('/dashboard', [App\Http\Controllers\SupabaseAuthController::class, 'dashboard'])->name('dashboard');
+
+// Old routes (commented out to prevent database access)
+// Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
+// Route::post('/login', [CustomLoginController::class, 'login']);
 
 // Supabase routes (for testing and data operations)
 Route::get('/supabase/customers', [SupabaseController::class, 'customers'])->name('supabase.customers');
