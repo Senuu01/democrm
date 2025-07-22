@@ -94,14 +94,23 @@ Route::middleware(['simple.auth'])->group(function () {
 Route::post('/webhook/stripe', [App\Http\Controllers\StripeWebhookController::class, 'handleWebhook'])->name('stripe.webhook');
 Route::get('/webhook/stripe/test', [App\Http\Controllers\StripeWebhookController::class, 'test'])->name('stripe.webhook.test');
 
-// Simple Email Authentication (No Database) - Direct routes
-Route::get('/login', [App\Http\Controllers\SimpleAuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [App\Http\Controllers\SimpleAuthController::class, 'sendLoginCode'])->name('auth.send-code');
-Route::get('/verify', [App\Http\Controllers\SimpleAuthController::class, 'showVerifyCode'])->name('auth.verify');
-Route::post('/verify', [App\Http\Controllers\SimpleAuthController::class, 'verifyCode'])->name('auth.verify.post');
-Route::get('/register', [App\Http\Controllers\SimpleAuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [App\Http\Controllers\SimpleAuthController::class, 'register'])->name('register.post');
-Route::post('/logout', [App\Http\Controllers\SimpleAuthController::class, 'logout'])->name('auth.logout');
+// Email/Password Authentication with Supabase
+Route::get('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [App\Http\Controllers\EmailPasswordAuthController::class, 'login'])->name('auth.email-login.post');
+
+Route::get('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'showRegister'])->name('auth.email-register');
+Route::post('/register', [App\Http\Controllers\EmailPasswordAuthController::class, 'register'])->name('auth.email-register.post');
+
+Route::get('/verify-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'showEmailVerification'])->name('auth.verify-email-form');
+Route::post('/verify-email', [App\Http\Controllers\EmailPasswordAuthController::class, 'verifyEmail'])->name('auth.verify-email.post');
+
+Route::get('/forgot-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'showForgotPassword'])->name('auth.forgot-password');
+Route::post('/forgot-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'sendResetCode'])->name('auth.send-reset-code');
+
+Route::get('/reset-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'showResetPassword'])->name('auth.reset-password-form');
+Route::post('/reset-password', [App\Http\Controllers\EmailPasswordAuthController::class, 'resetPassword'])->name('auth.reset-password.post');
+
+Route::post('/logout', [App\Http\Controllers\EmailPasswordAuthController::class, 'logout'])->name('auth.logout');
 
 // Old routes (commented out to prevent database access)
 // Route::get('/login', [CustomLoginController::class, 'index'])->name('login');
@@ -148,6 +157,10 @@ Route::get('/test-session', function() {
         'all_session' => Session::all()
     ]);
 });
+
+// Supabase Setup Routes
+Route::get('/setup-supabase', [App\Http\Controllers\SupabaseSetupController::class, 'setupDatabase'])->name('setup.supabase');
+Route::get('/check-tables', [App\Http\Controllers\SupabaseSetupController::class, 'checkTables'])->name('check.tables');
 
 // Setup route to create Supabase users table
 Route::get('/setup-database', function() {
