@@ -57,16 +57,36 @@ class SupabaseController extends Controller
 
     public function createTables()
     {
-        // Create customers table in Supabase
-        $customersTable = $this->supabase->query('customers');
-        
-        // Create proposals table in Supabase
-        $proposalsTable = $this->supabase->query('proposals');
-        
+        try {
+            // Test users table by querying it
+            $usersTable = $this->supabase->query('users');
+            $usersExist = true;
+        } catch (\Exception $e) {
+            $usersExist = false;
+        }
+
+        try {
+            // Test customers table by querying it
+            $customersTable = $this->supabase->query('customers');
+            $customersExist = true;
+        } catch (\Exception $e) {
+            $customersExist = false;
+        }
+
+        try {
+            // Test proposals table by querying it
+            $proposalsTable = $this->supabase->query('proposals');
+            $proposalsExist = true;
+        } catch (\Exception $e) {
+            $proposalsExist = false;
+        }
+
         return response()->json([
             'message' => 'Checked Supabase tables',
-            'customers' => $customersTable,
-            'proposals' => $proposalsTable
+            'users_exist' => $usersExist,
+            'customers_exist' => $customersExist,
+            'proposals_exist' => $proposalsExist,
+            'note' => 'Tables will be created automatically when first data is inserted, or create them manually in Supabase dashboard'
         ]);
     }
 }

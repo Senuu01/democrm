@@ -88,4 +88,24 @@ Route::get('/supabase/proposals', [SupabaseController::class, 'proposals'])->nam
 Route::post('/supabase/proposals', [SupabaseController::class, 'storeProposal'])->name('supabase.proposals.store');
 Route::get('/supabase/setup', [SupabaseController::class, 'createTables'])->name('supabase.setup');
 
-require __DIR__.'/auth.php';
+// Test route for Supabase integration
+Route::get('/test-supabase', function() {
+    $supabase = app(\App\Services\SupabaseService::class);
+    
+    try {
+        // Test query
+        $users = $supabase->query('users');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Supabase connection working',
+            'users' => $users
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+})->name('test.supabase');
+
+// require __DIR__.'/auth.php'; // Commented out to use SimpleAuth instead

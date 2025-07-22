@@ -14,7 +14,13 @@
                     <h1 class="text-2xl font-bold text-indigo-600">Connectly</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-gray-700">{{ $user_email }}</span>
+                    <div class="text-right">
+                        <div class="text-gray-900 font-medium">{{ $user_name }}</div>
+                        <div class="text-gray-600 text-sm">{{ $user_email }}</div>
+                        @if($user_company)
+                            <div class="text-gray-500 text-xs">{{ $user_company }}</div>
+                        @endif
+                    </div>
                     <form method="POST" action="{{ route('auth.logout') }}" class="inline">
                         @csrf
                         <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
@@ -30,9 +36,13 @@
         <div class="px-4 py-6 sm:px-0">
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="px-6 py-4">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Welcome to your CRM Dashboard!</h2>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Welcome back, {{ $user_name }}!</h2>
                     
-                    <p class="text-gray-600 mb-6">You're successfully logged in with: <strong>{{ $user_email }}</strong></p>
+                    <p class="text-gray-600 mb-6">You're successfully logged in with: <strong>{{ $user_email }}</strong>
+                    @if($user_company)
+                        from <strong>{{ $user_company }}</strong>
+                    @endif
+                    </p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-indigo-50 p-6 rounded-lg">

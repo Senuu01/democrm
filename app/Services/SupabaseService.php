@@ -117,4 +117,28 @@ class SupabaseService
 
         return $response->json();
     }
+
+    public function createUsersTable()
+    {
+        $sql = "
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                company VARCHAR(255),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        ";
+
+        $response = Http::withHeaders([
+            'apikey' => $this->serviceKey,
+            'Authorization' => "Bearer {$this->serviceKey}",
+            'Content-Type' => 'application/json',
+        ])->post("{$this->baseUrl}/rest/v1/rpc/create_users_table", [
+            'sql' => $sql
+        ]);
+
+        return $response->json();
+    }
 }
