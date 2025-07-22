@@ -19,8 +19,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force HTTPS in production
-        if (app()->environment('production')) {
+        // Force HTTPS only for URL generation, not redirects
+        if (app()->environment('production') && !app()->runningInConsole()) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
     }
