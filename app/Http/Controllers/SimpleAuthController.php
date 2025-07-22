@@ -52,8 +52,9 @@ class SimpleAuthController extends Controller
             Session::put('user_exists', $userExists);
             Session::put('user_data', $userExists && isset($user[0]) ? $user[0] : ['email' => $email]);
 
-            // Send email via Laravel Mail with Resend (only if user exists)
-            if ($userExists) {
+            // Send email via Laravel Mail with Resend
+            // Temporarily send to all emails for testing - remove this condition later
+            try {
                 Mail::send([], [], function ($message) use ($email, $code) {
                     $message->to($email)
                             ->subject('Your Connectly Login Code')
@@ -61,8 +62,11 @@ class SimpleAuthController extends Controller
                                 <h2>Your Login Code</h2>
                                 <p>Your login code is: <strong style='font-size: 24px; color: #4f46e5;'>{$code}</strong></p>
                                 <p>This code expires in 10 minutes.</p>
+                                <p><small>User exists: " . ($userExists ? 'Yes' : 'No') . "</small></p>
                             ");
                 });
+            } catch (\Exception $mailError) {
+                return back()->withInput()->withErrors(['email' => 'Failed to send email: ' . $mailError->getMessage()]);
             }
 
             // Always show success message for security (don't reveal if user exists)
@@ -104,10 +108,14 @@ class SimpleAuthController extends Controller
         
         // Check if user actually exists before logging them in
         $userExists = Session::get('user_exists', false);
+        // Temporarily allow login even if user doesn't exist for testing
+        // Remove this condition later and uncomment below
+        /*
         if (!$userExists) {
             Session::flush();
             return redirect()->route('login')->withErrors(['email' => 'Email not found. Please register first.']);
         }
+        */
 
         // Login successful
         Session::put('authenticated', true);
