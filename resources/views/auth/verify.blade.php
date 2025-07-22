@@ -21,7 +21,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('auth.verify') }}" class="space-y-6">
+        <form method="POST" action="{{ route('auth.verify.post') }}" class="space-y-6">
             @csrf
             
             <div>
